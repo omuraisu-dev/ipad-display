@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Ambient Display</title>
+<style>
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+}
+
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --radius: 22px;
+  --tr: 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ── Dark theme ── */
+body.dark {
+  --bg-a: #08081c;
+  --bg-b: #101030;
+  --blob1: #1a3a8a;
+  --blob2: #4a1a7a;
+  --card-bg: rgba(255,255,255,0.065);
+  --card-border: rgba(255,255,255,0.10);
+  --card-glow: 0 12px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07);
+  --text-1: rgba(255,255,255,0.94);
+  --text-2: rgba(255,255,255,0.52);
+  --text-3: rgba(255,255,255,0.30);
+  --accent: #5aafff;
+  --divider: rgba(255,255,255,0.07);
+  --ctrl-bg: rgba(255,255,255,0.09);
+  --ctrl-border: rgba(255,255,255,0.12);
+  --ctrl-text: rgba(255,255,255,0.82);
+}
+
+/* ── Light theme ── */
+body.light {
+  --bg-a: #dce5f2;
+  --bg-b: #eaeff8;
+  --blob1: #a8c0e8;
+  --blob2: #c8a8e0;
+  --card-bg: rgba(255,255,255,0.70);
+  --card-border: rgba(255,255,255,0.95);
+  --card-glow: 0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.85);
+  --text-1: rgba(0,0,0,0.88);
+  --text-2: rgba(0,0,0,0.50);
+  --text-3: rgba(0,0,0,0.28);
+  --accent: #007AFF;
+  --divider: rgba(0,0,0,0.07);
+  --ctrl-bg: rgba(255,255,255,0.78);
+  --ctrl-border: rgba(0,0,0,0.10);
+  --ctrl-text: rgba(0,0,0,0.72);
+}
+
+body {
+  font-family: var(--font);
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 20% 30%, var(--blob1) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 80%, var(--blob2) 0%, transparent 55%),
+              linear-gradient(160deg, var(--bg-a) 0%, var(--bg-b) 100%);
+  transition: background var(--tr);
+}
+
+#app {
+  position: relative; width: 100%; height: 100%;
+  overflow: hidden;
+}
+
+/* ── Controls ── */
+#controls {
+  position: fixed;
+  top: 18px; right: 18px;
+  display: flex; gap: 8px;
+  z-index: 1000;
+}
+
+.ctrl-btn {
+  background: var(--ctrl-bg);
+  border: 1px solid var(--ctrl-border);
+  color: var(--ctrl-text);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-radius: 13px;
+  padding: 7px 14px;
+  font-family: var(--font);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; letter-spacing: 0.2px;
+  transition: opacity 0.18s, transform 0.18s;
+}
+.ctrl-btn:active { opacity: 0.7; transform: scale(0.95); }
+
+/* ── Widget base ── */
+.widget {
+  position: absolute;
+  background: var(--card-bg);
+  backdrop-filter: blur(44px) saturate(180%);
+  -webkit-backdrop-filter: blur(44px) saturate(180%);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-glow);
+  padding: 22px 24px;
+  overflow: hidden;
+  transition: background var(--tr), border-color var(--tr),
+              box-shadow 0.2s, transform 0.15s ease-out, opacity 0.15s;
+  will-change: transform;
+}
+.widget.press-hold { transform: scale(0.96); transition: transform 0.45s ease-out; }
+.widget.dragging {
+  cursor: grabbing;
+  box-shadow: 0 24px 72px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.10);
+  transform: scale(1.03); opacity: 0.88; z-index: 500;
+  transition: transform 0.15s ease-out, opacity 0.15s, box-shadow 0.2s;
+}
+/* position/size animated snap */
+.widget.snapping {
+  transition: background var(--tr), border-color var(--tr),
+              box-shadow 0.2s, transform 0.15s ease-out, opacity 0.15s,
+              left 0.28s cubic-bezier(0.25,0.46,0.45,0.94),
+              top  0.28s cubic-bezier(0.25,0.46,0.45,0.94),
+              width  0.28s cubic-bezier(0.25,0.46,0.45,0.94),
+              height 0.28s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+/* Screen edge drop zone */
+.screen-edge {
+  position: fixed; pointer-events: none; z-index: 250;
+  opacity: 0; transition: opacity 0.15s;
+}
+.screen-edge.left-edge   { left: 0;   top: 0; bottom: 0; width: 64px;  background: linear-gradient(to right,  rgba(90,175,255,0.55), transparent); }
+.screen-edge.right-edge  { right: 0;  top: 0; bottom: 0; width: 64px;  background: linear-gradient(to left,   rgba(90,175,255,0.55), transparent); }
+.screen-edge.top-edge    { top: 0;    left: 0; right: 0; height: 64px; background: linear-gradient(to bottom, rgba(90,175,255,0.55), transparent); }
+.screen-edge.bottom-edge { bottom: 0; left: 0; right: 0; height: 64px; background: linear-gradient(to top,    rgba(90,175,255,0.55), transparent); }
+.screen-edge.active { opacity: 1; }
+
+/* Drop edge highlight */
+.drop-edge {
+  position: absolute; pointer-events: none; z-index: 300;
+  background: var(--accent);
+  box-shadow: 0 0 14px 6px var(--accent), 0 0 4px 1px rgba(255,255,255,0.5);
+  border-radius: 3px;
+  opacity: 0; transition: opacity 0.15s;
+}
+.drop-edge.active { opacity: 1; }
+
+/* ════════════════════════════════
+   CLOCK WIDGET
+   ════════════════════════════════ */
+
+.clock-weekday {
+  font-size: 11px; font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase; letter-spacing: 2px;
+  margin-bottom: 8px;
+  transition: color var(--tr);
+}
+
+.clock-row {
+  display: flex; align-items: baseline; gap: 0;
+}
+
+.clock-hm {
+  font-size: 78px; font-weight: 200;
+  color: var(--text-1); letter-spacing: -3px; line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--tr);
+}
+
+.clock-sep {
+  font-size: 78px; font-weight: 200;
+  color: var(--text-1); letter-spacing: -3px;
+  transition: opacity 0.5s, color var(--tr);
+}
+
+.clock-sec {
+  font-size: 26px; font-weight: 300;
+  color: var(--text-2); letter-spacing: -0.5px;
+  align-self: flex-end; margin-bottom: 10px; margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--tr);
+}
+
+.clock-date {
+  margin-top: 10px;
+  font-size: 15px; font-weight: 400;
+  color: var(--text-2); letter-spacing: 0.1px;
+  transition: color var(--tr);
+}
+
+/* ════════════════════════════════
+   WEATHER WIDGET
+   ════════════════════════════════ */
+
+.wx-location {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  margin-bottom: 14px;
+  transition: color var(--tr);
+}
+.wx-location svg { width: 11px; height: 11px; flex-shrink: 0; opacity: 0.7; }
+
+.wx-main { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+
+.wx-icon { font-size: 54px; line-height: 1; margin-top: -2px; }
+
+.wx-right {}
+
+.wx-temp {
+  font-size: 54px; font-weight: 200;
+  color: var(--text-1); letter-spacing: -2px; line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--tr);
+}
+.wx-unit {
+  font-size: 24px; font-weight: 300;
+  color: var(--text-2); vertical-align: super;
+  transition: color var(--tr);
+}
+.wx-desc {
+  font-size: 13px; font-weight: 400;
+  color: var(--text-2); margin-top: 4px;
+  transition: color var(--tr);
+}
+
+.wx-divider { height: 1px; background: var(--divider); margin: 0 0 14px; transition: background var(--tr); }
+
+.wx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; }
+
+.wx-cell {}
+.wx-cell-label {
+  font-size: 9.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.9px;
+  color: var(--text-3); margin-bottom: 2px;
+  transition: color var(--tr);
+}
+.wx-cell-val {
+  font-size: 14px; font-weight: 400;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--tr);
+}
+
+/* ════════════════════════════════
+   CALENDAR WIDGET
+   ════════════════════════════════ */
+
+.cal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.cal-title {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  transition: color var(--tr);
+}
+.cal-action-btn {
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 10px;
+  padding: 5px 12px;
+  font-family: var(--font); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: opacity 0.18s;
+}
+.cal-action-btn:active { opacity: 0.75; }
+
+/* Setup prompt */
+.cal-empty {
+  text-align: center; padding: 18px 0 4px;
+}
+.cal-empty-icon { font-size: 34px; margin-bottom: 10px; }
+.cal-empty-text {
+  font-size: 13px; line-height: 1.55;
+  color: var(--text-2);
+  transition: color var(--tr);
+}
+
+/* Event list */
+.event-list { display: flex; flex-direction: column; }
+
+.event-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--divider);
+  transition: border-color var(--tr);
+}
+.event-item:first-child { padding-top: 0; }
+.event-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.event-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.event-info { flex: 1; min-width: 0; }
+.event-name {
+  font-size: 14px; font-weight: 400;
+  color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color var(--tr);
+}
+.event-time {
+  font-size: 12px; font-weight: 400;
+  color: var(--text-2); margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--tr);
+}
+
+/* ════════════════════════════════
+   SETUP MODAL
+   ════════════════════════════════ */
+#modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 2000;
+  align-items: center; justify-content: center;
+}
+#modal.open { display: flex; }
+
+.modal-box {
+  background: var(--card-bg);
+  backdrop-filter: blur(48px) saturate(180%);
+  -webkit-backdrop-filter: blur(48px) saturate(180%);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: 28px 28px 24px;
+  width: 430px; max-width: 92vw;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+}
+.modal-title {
+  font-size: 17px; font-weight: 600;
+  color: var(--text-1); margin-bottom: 6px;
+  transition: color var(--tr);
+}
+.modal-sub {
+  font-size: 13px; line-height: 1.6;
+  color: var(--text-2); margin-bottom: 18px;
+  transition: color var(--tr);
+}
+.modal-sub ol { margin: 8px 0 0 18px; }
+.modal-sub li { margin-bottom: 3px; }
+.modal-sub code {
+  font-family: "SF Mono", Menlo, monospace;
+  background: rgba(128,128,128,0.18); border-radius: 4px;
+  padding: 1px 5px; font-size: 11px;
+}
+
+.modal-input {
+  width: 100%;
+  background: rgba(128,128,128,0.12);
+  border: 1px solid var(--card-border);
+  border-radius: 12px; padding: 10px 14px;
+  font-family: var(--font); font-size: 13px;
+  color: var(--text-1); outline: none;
+  margin-bottom: 16px; transition: border-color 0.2s;
+  -webkit-user-select: text; user-select: text;
+}
+.modal-input:focus { border-color: var(--accent); }
+.modal-input::placeholder { color: var(--text-3); }
+
+.modal-row { display: flex; gap: 8px; justify-content: flex-end; }
+
+.modal-btn {
+  border: 1px solid var(--card-border);
+  background: transparent; color: var(--text-2);
+  border-radius: 12px; padding: 9px 18px;
+  font-family: var(--font); font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: opacity 0.18s;
+}
+.modal-btn.primary { background: var(--accent); border-color: transparent; color: #fff; }
+.modal-btn:active { opacity: 0.72; }
+</style>
+</head>
+<body class="dark">
+
+<!-- Google Identity Services (for Calendar OAuth) -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+
+<div id="app">
+
+  <!-- Controls -->
+  <div id="controls">
+    <button class="ctrl-btn" id="btnLang">EN</button>
+    <button class="ctrl-btn" id="btnTheme">☀️</button>
+    <button class="ctrl-btn" id="btnReset" title="Reset layout">⊹</button>
+  </div>
+
+  <!-- ── Clock Widget ── -->
+  <div class="widget" id="clockWidget">
+    <div class="clock-weekday" id="clkDay"></div>
+    <div class="clock-row">
+      <span class="clock-hm" id="clkHM">00:00</span>
+      <span class="clock-sec" id="clkS">00</span>
+    </div>
+    <div class="clock-date" id="clkDate"></div>
+  </div>
+
+  <!-- ── Weather Widget ── -->
+  <div class="widget" id="weatherWidget">
+    <div class="wx-location">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+      </svg>
+      <span id="wxCity">--</span>
+    </div>
+    <div class="wx-main">
+      <div class="wx-icon" id="wxIcon">–</div>
+      <div class="wx-right">
+        <div class="wx-temp"><span id="wxTemp">--</span><span class="wx-unit">°</span></div>
+        <div class="wx-desc" id="wxDesc">--</div>
+      </div>
+    </div>
+    <div class="wx-divider"></div>
+    <div class="wx-grid">
+      <div class="wx-cell">
+        <div class="wx-cell-label" id="lbHumidity">湿度</div>
+        <div class="wx-cell-val" id="wxHumidity">--%</div>
+      </div>
+      <div class="wx-cell">
+        <div class="wx-cell-label" id="lbWind">風速</div>
+        <div class="wx-cell-val" id="wxWind">-- km/h</div>
+      </div>
+      <div class="wx-cell">
+        <div class="wx-cell-label" id="lbHigh">最高</div>
+        <div class="wx-cell-val" id="wxHigh">--°</div>
+      </div>
+      <div class="wx-cell">
+        <div class="wx-cell-label" id="lbLow">最低</div>
+        <div class="wx-cell-val" id="wxLow">--°</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Calendar Widget ── -->
+  <div class="widget" id="calendarWidget">
+    <div class="cal-header">
+      <span class="cal-title" id="calTitle">予定</span>
+      <button class="cal-action-btn" id="calBtn">接続</button>
+    </div>
+    <div id="calBody">
+      <div class="cal-empty">
+        <div class="cal-empty-icon">📅</div>
+        <div class="cal-empty-text" id="calEmptyText">Google Calendarを接続して<br>今日の予定を表示します</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<!-- ── Setup Modal ── -->
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="mTitle">Google Calendar 設定</div>
+    <div class="modal-sub" id="mDesc">
+      Google Cloud ConsoleでOAuth 2.0クライアントIDを取得してください：
+      <ol>
+        <li>Google Cloud Console → APIとサービス → 認証情報</li>
+        <li>認証情報を作成 → OAuthクライアントID → ウェブアプリケーション</li>
+        <li>承認済みJavaScriptオリジンに <code>file://</code> またはこのページのURLを追加</li>
+        <li>Google Calendar APIを有効化</li>
+      </ol>
+    </div>
+    <input class="modal-input" id="mInput" type="text"
+           placeholder="クライアントID（xxxxx.apps.googleusercontent.com）">
+    <div class="modal-row">
+      <button class="modal-btn" id="mCancel">キャンセル</button>
+      <button class="modal-btn primary" id="mSave">保存して接続</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let lang  = localStorage.getItem('amb_lang')  || 'ja';
+let theme = localStorage.getItem('amb_theme') || 'dark';
+let _weatherData = null;
+let _calEvents   = null;
+let _googleToken = null;
+let _tokenTimer  = null;
+
+const COLORS = ['#FF6B6B','#4EC9C4','#5AAFFF','#A78BFA','#34D399','#F59E0B'];
+
+// ════════════════════════════════════════════
+//  STRINGS
+// ════════════════════════════════════════════
+const T = {
+  ja: {
+    wd: ['日曜日','月曜日','火曜日','水曜日','木曜日','金曜日','土曜日'],
+    mo: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+    dateFmt: d => `${d.getFullYear()}年 ${T.ja.mo[d.getMonth()]} ${d.getDate()}日`,
+    humidity:'湿度', wind:'風速', high:'最高', low:'最低',
+    calTitle:'予定', connect:'接続', refresh:'更新',
+    allday:'終日', noEvents:'今日の予定はありません',
+    emptyText:'Google Calendarを接続して<br>今日の予定を表示します',
+    mTitle:'Google Calendar 設定',
+    mDesc:`Google Cloud ConsoleでOAuth 2.0クライアントIDを取得してください：<ol>
+      <li>Google Cloud Console → APIとサービス → 認証情報</li>
+      <li>認証情報を作成 → OAuthクライアントID → ウェブアプリケーション</li>
+      <li>承認済みJavaScriptオリジンに <code>file://</code> またはこのページのURLを追加</li>
+      <li>Google Calendar APIを有効化</li></ol>`,
+    mInput:'クライアントID（xxxxx.apps.googleusercontent.com）',
+    cancel:'キャンセル', save:'保存して接続',
+    wx: {
+      0:'快晴',1:'晴れ',2:'一部曇り',3:'曇り',
+      45:'霧',48:'霧',
+      51:'小雨',53:'雨',55:'強い雨',
+      61:'小雨',63:'雨',65:'大雨',
+      71:'小雪',73:'雪',75:'大雪',77:'雪',
+      80:'にわか雨',81:'にわか雨',82:'強いにわか雨',
+      85:'雪',86:'大雪',95:'雷雨',96:'雷雨',99:'雷雨',
+    }
+  },
+  en: {
+    wd: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    mo: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    dateFmt: d => `${T.en.mo[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`,
+    humidity:'Humidity', wind:'Wind', high:'High', low:'Low',
+    calTitle:'Schedule', connect:'Connect', refresh:'Refresh',
+    allday:'All day', noEvents:'No events today',
+    emptyText:'Connect Google Calendar<br>to show your schedule',
+    mTitle:'Google Calendar Setup',
+    mDesc:`Get an OAuth 2.0 Client ID from Google Cloud Console:<ol>
+      <li>Google Cloud Console → APIs &amp; Services → Credentials</li>
+      <li>Create Credentials → OAuth Client ID → Web Application</li>
+      <li>Add <code>file://</code> or this page's URL to Authorized JavaScript origins</li>
+      <li>Enable Google Calendar API</li></ol>`,
+    mInput:'Client ID (xxxxx.apps.googleusercontent.com)',
+    cancel:'Cancel', save:'Save & Connect',
+    wx: {
+      0:'Clear Sky',1:'Mainly Clear',2:'Partly Cloudy',3:'Overcast',
+      45:'Foggy',48:'Foggy',
+      51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',
+      61:'Light Rain',63:'Rain',65:'Heavy Rain',
+      71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',
+      80:'Showers',81:'Showers',82:'Violent Showers',
+      85:'Snow Showers',86:'Heavy Snow',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm',
+    }
+  }
+};
+
+const WX_ICON = {
+  0:'☀️',1:'🌤️',2:'⛅',3:'☁️',
+  45:'🌫️',48:'🌫️',
+  51:'🌦️',53:'🌧️',55:'🌧️',
+  61:'🌦️',63:'🌧️',65:'🌧️',
+  71:'🌨️',73:'❄️',75:'❄️',77:'🌨️',
+  80:'🌦️',81:'🌧️',82:'⛈️',
+  85:'🌨️',86:'❄️',95:'⛈️',96:'⛈️',99:'⛈️',
+};
+
+// ════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ════════════════════════════════════════════
+//  THEME
+// ════════════════════════════════════════════
+function applyTheme() {
+  document.body.className = theme;
+  $('btnTheme').textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+$('btnTheme').onclick = () => {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('amb_theme', theme);
+  applyTheme();
+};
+
+// ════════════════════════════════════════════
+//  LANGUAGE
+// ════════════════════════════════════════════
+function applyLang() {
+  $('btnLang').textContent  = lang === 'ja' ? 'EN' : '日';
+  const t = T[lang];
+  $('lbHumidity').textContent = t.humidity;
+  $('lbWind').textContent     = t.wind;
+  $('lbHigh').textContent     = t.high;
+  $('lbLow').textContent      = t.low;
+  $('calTitle').textContent   = t.calTitle;
+  $('calBtn').textContent     = _calEvents !== null ? t.refresh : t.connect;
+  $('calEmptyText') && ($('calEmptyText').innerHTML = t.emptyText);
+  $('mTitle').textContent     = t.mTitle;
+  $('mDesc').innerHTML        = t.mDesc;
+  $('mInput').placeholder     = t.mInput;
+  $('mCancel').textContent    = t.cancel;
+  $('mSave').textContent      = t.save;
+  // re-render weather desc & calendar with new lang
+  if (_weatherData) renderWeather(_weatherData);
+  renderCalendar(_calEvents);
+  updateClock();
+}
+$('btnLang').onclick = () => {
+  lang = lang === 'ja' ? 'en' : 'ja';
+  localStorage.setItem('amb_lang', lang);
+  applyLang();
+};
+
+// ════════════════════════════════════════════
+//  CLOCK
+// ════════════════════════════════════════════
+function updateClock() {
+  const n = new Date(), t = T[lang];
+  const hm = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+  $('clkHM').textContent  = hm;
+  $('clkS').textContent   = pad(n.getSeconds());
+  $('clkDay').textContent = t.wd[n.getDay()];
+  $('clkDate').textContent = t.dateFmt(n);
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+setInterval(updateClock, 1000);
+
+// ════════════════════════════════════════════
+//  WEATHER  (Open-Meteo + Nominatim)
+// ════════════════════════════════════════════
+function fetchWeather() {
+  if (!navigator.geolocation) {
+    $('wxCity').textContent = lang === 'ja' ? '位置情報不可' : 'Unavailable';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude: lat, longitude: lon } = pos.coords;
+    try {
+      // Reverse geocoding
+      const gr = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=${lang}`,
+        { headers: { 'Accept-Language': lang } }
+      );
+      const gd = await gr.json();
+      $('wxCity').textContent =
+        gd.address?.city || gd.address?.town || gd.address?.village || gd.address?.county || '';
+
+      // Weather
+      const wr = await fetch(
+        `https://api.open-meteo.com/v1/forecast` +
+        `?latitude=${lat}&longitude=${lon}` +
+        `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m` +
+        `&daily=temperature_2m_max,temperature_2m_min` +
+        `&timezone=auto&forecast_days=1`
+      );
+      _weatherData = await wr.json();
+      renderWeather(_weatherData);
+    } catch(e) { console.warn('Weather error:', e); }
+  }, () => {
+    $('wxCity').textContent = lang === 'ja' ? '取得エラー' : 'Error';
+  });
+  setTimeout(fetchWeather, 10 * 60 * 1000); // refresh every 10 min
+}
+
+function renderWeather(d) {
+  const c    = d.current;
+  const dl   = d.daily;
+  const code = c.weather_code ?? 0;
+  $('wxIcon').textContent  = WX_ICON[code] || '🌡️';
+  $('wxTemp').textContent  = Math.round(c.temperature_2m);
+  $('wxDesc').textContent  = T[lang].wx[code] || '';
+  $('wxHumidity').textContent = (c.relative_humidity_2m ?? '--') + '%';
+  $('wxWind').textContent     = Math.round(c.wind_speed_10m ?? 0) + ' km/h';
+  $('wxHigh').textContent     = Math.round(dl.temperature_2m_max[0]) + '°';
+  $('wxLow').textContent      = Math.round(dl.temperature_2m_min[0]) + '°';
+}
+
+// ════════════════════════════════════════════
+//  CALENDAR  (Google Calendar API + GIS OAuth)
+// ════════════════════════════════════════════
+function initCalendar() {
+  const id = localStorage.getItem('gcal_client_id');
+  if (id) connectCalendar(id);
+}
+
+function connectCalendar(clientId) {
+  if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
+    return setTimeout(() => connectCalendar(clientId), 600);
+  }
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: 'https://www.googleapis.com/auth/calendar.readonly',
+    callback: async res => {
+      if (res.error) return console.warn('OAuth error:', res.error);
+      _googleToken = res.access_token;
+      // Auto-refresh token before it expires (~55 min)
+      clearTimeout(_tokenTimer);
+      _tokenTimer = setTimeout(() => connectCalendar(clientId), 55 * 60 * 1000);
+      await loadCalendarEvents();
+    }
+  });
+  client.requestAccessToken({ prompt: '' });
+}
+
+async function loadCalendarEvents() {
+  if (!_googleToken) return;
+  try {
+    const now = new Date();
+    const tMin = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const tMax = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+    const r = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events` +
+      `?timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}` +
+      `&singleEvents=true&orderBy=startTime&maxResults=8`,
+      { headers: { Authorization: `Bearer ${_googleToken}` } }
+    );
+    const data = await r.json();
+    _calEvents = data.items || [];
+    renderCalendar(_calEvents);
+    $('calBtn').textContent = T[lang].refresh;
+  } catch(e) { console.warn('Calendar error:', e); }
+  // Refresh calendar every 5 min
+  setTimeout(loadCalendarEvents, 5 * 60 * 1000);
+}
+
+function renderCalendar(events) {
+  const t = T[lang];
+  if (events === null) {
+    $('calBody').innerHTML = `
+      <div class="cal-empty">
+        <div class="cal-empty-icon">📅</div>
+        <div class="cal-empty-text" id="calEmptyText">${t.emptyText}</div>
+      </div>`;
+    return;
+  }
+  if (events.length === 0) {
+    $('calBody').innerHTML = `
+      <div class="cal-empty">
+        <div class="cal-empty-icon">✨</div>
+        <div class="cal-empty-text">${t.noEvents}</div>
+      </div>`;
+    return;
+  }
+  const rows = events.map((ev, i) => {
+    const isAllDay = !ev.start?.dateTime;
+    let timeStr = t.allday;
+    if (!isAllDay) {
+      const d = new Date(ev.start.dateTime);
+      timeStr = d.toLocaleTimeString(lang === 'ja' ? 'ja-JP' : 'en-US',
+        { hour: '2-digit', minute: '2-digit', hour12: lang === 'en' });
+    }
+    const color = COLORS[i % COLORS.length];
+    return `<div class="event-item">
+      <div class="event-dot" style="background:${color}"></div>
+      <div class="event-info">
+        <div class="event-name">${esc(ev.summary || '(無題)')}</div>
+        <div class="event-time">${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+  $('calBody').innerHTML = `<div class="event-list">${rows}</div>`;
+}
+
+// Calendar button
+$('calBtn').onclick = () => {
+  const id = localStorage.getItem('gcal_client_id');
+  if (id && _calEvents !== null) {
+    loadCalendarEvents(); // refresh
+  } else {
+    openModal();
+  }
+};
+
+// ── Modal ──
+function openModal() {
+  const saved = localStorage.getItem('gcal_client_id');
+  if (saved) $('mInput').value = saved;
+  $('modal').classList.add('open');
+}
+function closeModal() { $('modal').classList.remove('open'); }
+
+$('mCancel').onclick = closeModal;
+$('modal').onclick = e => { if (e.target === $('modal')) closeModal(); };
+$('mSave').onclick = () => {
+  const id = $('mInput').value.trim();
+  if (!id) return;
+  localStorage.setItem('gcal_client_id', id);
+  closeModal();
+  connectCalendar(id);
+};
+
+// ════════════════════════════════════════════
+//  LAYOUT
+// ════════════════════════════════════════════
+const WIDGET_IDS     = ['clockWidget', 'weatherWidget', 'calendarWidget'];
+const EDGE_THRESHOLD = 70;
+const LONG_PRESS_MS  = 450;
+const SNAP_ANIM_MS   = 300;
+const LAYOUT_GAP     = 16;
+const LAYOUT_PAD     = 16;
+
+let widgetRects = {};  // { id: { x, y, w, h } } px
+let dragState   = null;
+
+// ── Screen edge indicators ──
+const screenEdge = document.createElement('div');
+screenEdge.className = 'screen-edge';
+document.body.appendChild(screenEdge);
+
+function showScreenEdge(side) {
+  screenEdge.className = 'screen-edge active ' + side + '-edge';
+}
+function hideScreenEdge() { screenEdge.classList.remove('active'); }
+
+function computeEdgeLayout(dragId, edge) {
+  const G = LAYOUT_GAP, P = LAYOUT_PAD;
+  const W = window.innerWidth, H = window.innerHeight;
+  const aW = W - 2*P, aH = H - 2*P;
+  const colW = (aW - G) / 2, rowH = (aH - G) / 2;
+  const others = WIDGET_IDS.filter(id => id !== dragId);
+  if (edge === 'left') {
+    return {
+      [dragId]:    { x: P,        y: P,        w: colW, h: aH },
+      [others[0]]: { x: P+colW+G, y: P,        w: colW, h: rowH },
+      [others[1]]: { x: P+colW+G, y: P+rowH+G, w: colW, h: rowH },
+    };
+  } else if (edge === 'right') {
+    return {
+      [dragId]:    { x: P+colW+G, y: P,        w: colW, h: aH },
+      [others[0]]: { x: P,        y: P,        w: colW, h: rowH },
+      [others[1]]: { x: P,        y: P+rowH+G, w: colW, h: rowH },
+    };
+  } else if (edge === 'top') {
+    return {
+      [dragId]:    { x: P,        y: P,        w: aW,   h: rowH },
+      [others[0]]: { x: P,        y: P+rowH+G, w: colW, h: rowH },
+      [others[1]]: { x: P+colW+G, y: P+rowH+G, w: colW, h: rowH },
+    };
+  } else {
+    return {
+      [dragId]:    { x: P,        y: P+rowH+G, w: aW,   h: rowH },
+      [others[0]]: { x: P,        y: P,        w: colW, h: rowH },
+      [others[1]]: { x: P+colW+G, y: P,        w: colW, h: rowH },
+    };
+  }
+}
+
+// ── Drop edge highlight ──
+const dropEdge = document.createElement('div');
+dropEdge.className = 'drop-edge';
+$('app').appendChild(dropEdge);
+
+function showDropEdge(targetId, side) {
+  const r = widgetRects[targetId], THICK = 4, s = dropEdge.style;
+  if      (side === 'left')   { s.left = r.x+'px';              s.top = r.y+'px';              s.width = THICK+'px'; s.height = r.h+'px'; }
+  else if (side === 'right')  { s.left = (r.x+r.w-THICK)+'px'; s.top = r.y+'px';              s.width = THICK+'px'; s.height = r.h+'px'; }
+  else if (side === 'top')    { s.left = r.x+'px';              s.top = r.y+'px';              s.width = r.w+'px';   s.height = THICK+'px'; }
+  else                        { s.left = r.x+'px';              s.top = (r.y+r.h-THICK)+'px'; s.width = r.w+'px';   s.height = THICK+'px'; }
+  dropEdge.classList.add('active');
+}
+function hideDropEdge() { dropEdge.classList.remove('active'); }
+
+function getDropTarget(dragId, px, py) {
+  for (const id of WIDGET_IDS) {
+    if (id === dragId) continue;
+    const r = widgetRects[id];
+    if (px >= r.x && px <= r.x+r.w && py >= r.y && py <= r.y+r.h) {
+      const ndx = (px - (r.x+r.w/2)) / (r.w/2);
+      const ndy = (py - (r.y+r.h/2)) / (r.h/2);
+      const side = Math.abs(ndx) >= Math.abs(ndy) ? (ndx >= 0 ? 'right' : 'left') : (ndy >= 0 ? 'bottom' : 'top');
+      return { id, side };
+    }
+  }
+  return null;
+}
+
+// ── Layouts ──
+function getDefaultLayout() {
+  const W = window.innerWidth, H = window.innerHeight, G = LAYOUT_GAP, P = LAYOUT_PAD;
+  const aW = W - 2*P, aH = H - 2*P;
+  const cellW = (aW - G) / 2;
+  const topH  = aH * 0.65 - G / 2;
+  const botH  = aH * 0.35 - G / 2;
+  return {
+    clockWidget:    { x: P,           y: P,        w: cellW, h: topH },
+    weatherWidget:  { x: P+cellW+G,   y: P,        w: cellW, h: topH },
+    calendarWidget: { x: P,           y: P+topH+G, w: aW,    h: botH },
+  };
+}
+
+// Assign dragId to slot; others fill remaining slots in WIDGET_IDS order
+function buildLayout(dragId, dragSlot, slots) {
+  const others = WIDGET_IDS.filter(id => id !== dragId);
+  const order  = Array(slots.length);
+  order[dragSlot] = dragId;
+  let oi = 0;
+  for (let i = 0; i < slots.length; i++) if (order[i] === undefined) order[i] = others[oi++];
+  const rects = {};
+  order.forEach((id, i) => { rects[id] = slots[i]; });
+  return rects;
+}
+
+function mergeRects(r1, r2) {
+  const G = LAYOUT_GAP, e = 1.5;
+  if (Math.abs(r1.x+r1.w+G - r2.x) < e && Math.abs(r1.y-r2.y) < e && Math.abs(r1.h-r2.h) < e)
+    return { x: r1.x, y: r1.y, w: r1.w+G+r2.w, h: r1.h };
+  if (Math.abs(r2.x+r2.w+G - r1.x) < e && Math.abs(r1.y-r2.y) < e && Math.abs(r1.h-r2.h) < e)
+    return { x: r2.x, y: r2.y, w: r2.w+G+r1.w, h: r2.h };
+  if (Math.abs(r1.y+r1.h+G - r2.y) < e && Math.abs(r1.x-r2.x) < e && Math.abs(r1.w-r2.w) < e)
+    return { x: r1.x, y: r1.y, w: r1.w, h: r1.h+G+r2.h };
+  if (Math.abs(r2.y+r2.h+G - r1.y) < e && Math.abs(r1.x-r2.x) < e && Math.abs(r1.w-r2.w) < e)
+    return { x: r2.x, y: r2.y, w: r2.w, h: r2.h+G+r1.h };
+  return null;
+}
+
+function computeDropLayout(dragId, targetId, side) {
+  const G = LAYOUT_GAP;
+  const T = widgetRects[targetId];
+  const D_old = widgetRects[dragId];
+  const otherId = WIDGET_IDS.find(id => id !== dragId && id !== targetId);
+  const O = widgetRects[otherId];
+  let D_new, T_new;
+  if (side === 'left') {
+    const half = (T.w - G) / 2;
+    D_new = { x: T.x,        y: T.y, w: half, h: T.h };
+    T_new = { x: T.x+half+G, y: T.y, w: half, h: T.h };
+  } else if (side === 'right') {
+    const half = (T.w - G) / 2;
+    T_new = { x: T.x,        y: T.y, w: half, h: T.h };
+    D_new = { x: T.x+half+G, y: T.y, w: half, h: T.h };
+  } else if (side === 'top') {
+    const half = (T.h - G) / 2;
+    D_new = { x: T.x, y: T.y,        w: T.w, h: half };
+    T_new = { x: T.x, y: T.y+half+G, w: T.w, h: half };
+  } else {
+    const half = (T.h - G) / 2;
+    T_new = { x: T.x, y: T.y,        w: T.w, h: half };
+    D_new = { x: T.x, y: T.y+half+G, w: T.w, h: half };
+  }
+  const O_new = mergeRects(O, D_old);
+  if (O_new) return { [dragId]: D_new, [targetId]: T_new, [otherId]: O_new };
+  // Fallback: predefined layout matching the drop direction
+  const cx = D_new.x + D_new.w/2, cy = D_new.y + D_new.h/2;
+  const zmap = { left: 'leftside', right: 'rightside', top: 'topleft', bottom: 'bottomleft' };
+  return computeSnapLayout(dragId, zmap[side], cx, cy);
+}
+
+function computeSnapLayout(dragId, zone, cx, cy) {
+  const W = window.innerWidth, H = window.innerHeight, G = LAYOUT_GAP, P = LAYOUT_PAD;
+  const N = WIDGET_IDS.length;
+  const aW = W - 2*P, aH = H - 2*P;
+
+  if (zone === 'left' || zone === 'right') {
+    const cw   = (aW - (N-1)*G) / N;
+    const slot = Math.min(N-1, Math.max(0, Math.floor(((cx-P) / aW) * N)));
+    return buildLayout(dragId, slot,
+      Array.from({length: N}, (_, i) => ({ x: P+i*(cw+G), y: P, w: cw, h: aH })));
+  }
+
+  if (zone === 'top' || zone === 'bottom') {
+    const ch   = (aH - (N-1)*G) / N;
+    const slot = Math.min(N-1, Math.max(0, Math.floor(((cy-P) / aH) * N)));
+    return buildLayout(dragId, slot,
+      Array.from({length: N}, (_, i) => ({ x: P, y: P+i*(ch+G), w: aW, h: ch })));
+  }
+
+  if (zone === 'leftside') {
+    const colW = (aW - G) / 2, rowH = (aH - G) / 2;
+    const slots = [
+      { x: P,        y: P,        w: colW, h: aH },
+      { x: P+colW+G, y: P,        w: colW, h: rowH },
+      { x: P+colW+G, y: P+rowH+G, w: colW, h: rowH },
+    ];
+    const slot = cx < W/2 ? 0 : (cy < H/2 ? 1 : 2);
+    return buildLayout(dragId, slot, slots);
+  }
+
+  if (zone === 'rightside') {
+    const colW = (aW - G) / 2, rowH = (aH - G) / 2;
+    const slots = [
+      { x: P,        y: P,        w: colW, h: rowH },
+      { x: P,        y: P+rowH+G, w: colW, h: rowH },
+      { x: P+colW+G, y: P,        w: colW, h: aH },
+    ];
+    const slot = cx > W/2 ? 2 : (cy < H/2 ? 0 : 1);
+    return buildLayout(dragId, slot, slots);
+  }
+
+  const is2Top = zone === 'topleft' || zone === 'topright';
+  const cw     = (aW - G) / 2;
+  if (is2Top) {
+    const topH = aH*0.6 - G/2, botH = aH*0.4 - G/2, botY = P + aH*0.6 + G/2;
+    const slots = [
+      { x: P,      y: P,    w: cw, h: topH },
+      { x: P+cw+G, y: P,    w: cw, h: topH },
+      { x: P,      y: botY, w: aW, h: botH },
+    ];
+    const slot = cy > P + aH*0.6 ? 2 : (cx < W/2 ? 0 : 1);
+    return buildLayout(dragId, slot, slots);
+  } else {
+    const topH = aH*0.4 - G/2, botH = aH*0.6 - G/2, botY = P + aH*0.4 + G/2;
+    const slots = [
+      { x: P,      y: P,    w: aW, h: topH },
+      { x: P,      y: botY, w: cw, h: botH },
+      { x: P+cw+G, y: botY, w: cw, h: botH },
+    ];
+    const slot = cy < P + aH*0.4 ? 0 : (cx < W/2 ? 1 : 2);
+    return buildLayout(dragId, slot, slots);
+  }
+}
+
+function applyRects(rects) {
+  WIDGET_IDS.forEach(id => {
+    const el = $(id), r = rects[id];
+    el.style.position = 'absolute';
+    el.style.left   = r.x + 'px';
+    el.style.top    = r.y + 'px';
+    el.style.width  = r.w + 'px';
+    el.style.height = r.h + 'px';
+    widgetRects[id] = { ...r };
+  });
+}
+
+function snapAnimate(rects) {
+  WIDGET_IDS.forEach(id => $(id).classList.add('snapping'));
+  applyRects(rects);
+  setTimeout(() => WIDGET_IDS.forEach(id => $(id).classList.remove('snapping')), SNAP_ANIM_MS + 50);
+}
+
+function saveLayout() {
+  const W = window.innerWidth, H = window.innerHeight;
+  const data = {};
+  WIDGET_IDS.forEach(id => {
+    const r = widgetRects[id];
+    data[id] = { xP: r.x/W, yP: r.y/H, wP: r.w/W, hP: r.h/H };
+  });
+  localStorage.setItem('amb_layout', JSON.stringify(data));
+}
+
+function loadLayout() {
+  try {
+    const raw = localStorage.getItem('amb_layout');
+    if (!raw) return false;
+    const W = window.innerWidth, H = window.innerHeight;
+    const saved = JSON.parse(raw);
+    const loaded = {};
+    WIDGET_IDS.forEach(id => {
+      if (!saved[id]) return;
+      const s = saved[id];
+      loaded[id] = { x: s.xP*W, y: s.yP*H, w: s.wP*W, h: s.hP*H };
+    });
+    if (!WIDGET_IDS.every(id => loaded[id])) return false;
+    widgetRects = loaded;
+    return true;
+  } catch { return false; }
+}
+
+// ── Drag ──
+function startDrag(id, px, py) {
+  if (dragState) return;
+  WIDGET_IDS.forEach(wid => $(wid).classList.remove('snapping'));
+  const el = $(id), r = widgetRects[id];
+
+  el.style.position = 'fixed';
+  el.style.left   = r.x + 'px';
+  el.style.top    = r.y + 'px';
+  el.style.width  = r.w + 'px';
+  el.style.height = r.h + 'px';
+  el.classList.add('dragging');
+
+  dragState = { id, el, dropTarget: null, edgeZone: null, offsetX: px - r.x, offsetY: py - r.y, origRect: { ...r } };
+}
+
+function moveDrag(px, py) {
+  if (!dragState) return;
+  const { el, id } = dragState;
+  el.style.left = (px - dragState.offsetX) + 'px';
+  el.style.top  = (py - dragState.offsetY) + 'px';
+
+  const W = window.innerWidth, H = window.innerHeight, ET = EDGE_THRESHOLD;
+  const edge = px < ET ? 'left' : px > W-ET ? 'right' : py < ET ? 'top' : py > H-ET ? 'bottom' : null;
+
+  if (edge !== dragState.edgeZone) {
+    dragState.edgeZone = edge;
+    if (edge) {
+      showScreenEdge(edge);
+      hideDropEdge();
+      dragState.dropTarget = null;
+    } else {
+      hideScreenEdge();
+    }
+  }
+
+  if (!edge) {
+    const target = getDropTarget(id, px, py);
+    const tKey   = target ? target.id + target.side : null;
+    const oldKey = dragState.dropTarget ? dragState.dropTarget.id + dragState.dropTarget.side : null;
+    if (tKey !== oldKey) {
+      dragState.dropTarget = target;
+      target ? showDropEdge(target.id, target.side) : hideDropEdge();
+    }
+  }
+}
+
+function endDrag() {
+  if (!dragState) return;
+  const { id, el, dropTarget, edgeZone, origRect } = dragState;
+  dragState = null;
+  hideDropEdge();
+  hideScreenEdge();
+  el.classList.remove('dragging');
+
+  const curX = parseFloat(el.style.left);
+  const curY = parseFloat(el.style.top);
+
+  // fixed → absolute at current visual position (no jump)
+  el.style.position = 'absolute';
+  el.style.left   = curX       + 'px';
+  el.style.top    = curY       + 'px';
+  el.style.width  = origRect.w + 'px';
+  el.style.height = origRect.h + 'px';
+  el.offsetLeft; // force reflow
+
+  if (edgeZone) {
+    snapAnimate(computeEdgeLayout(id, edgeZone));
+    saveLayout();
+  } else if (dropTarget) {
+    snapAnimate(computeDropLayout(id, dropTarget.id, dropTarget.side));
+    saveLayout();
+  } else {
+    el.classList.add('snapping');
+    el.style.left = origRect.x + 'px';
+    el.style.top  = origRect.y + 'px';
+    setTimeout(() => el.classList.remove('snapping'), SNAP_ANIM_MS + 50);
+  }
+}
+
+// ── Per-widget long-press detection ──
+function initWidgetDrag(id) {
+  const el = $(id);
+  let timer = null, sx = 0, sy = 0;
+
+  function pt(e) {
+    return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                     : { x: e.clientX, y: e.clientY };
+  }
+
+  function onDown(e) {
+    if (e.target.closest('button, input, a')) return;
+    const p = pt(e);
+    sx = p.x; sy = p.y;
+    el.classList.add('press-hold');
+    timer = setTimeout(() => {
+      timer = null;
+      el.classList.remove('press-hold');
+      startDrag(id, sx, sy);
+    }, LONG_PRESS_MS);
+    e.preventDefault();
+  }
+
+  function cancel() { clearTimeout(timer); timer = null; el.classList.remove('press-hold'); }
+
+  el.addEventListener('mousedown',   onDown);
+  el.addEventListener('touchstart',  onDown, { passive: false });
+  el.addEventListener('contextmenu', e => e.preventDefault());
+  el.addEventListener('mousemove', e => {
+    if (!timer) return;
+    if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) cancel();
+  });
+  el.addEventListener('touchmove', e => {
+    if (!timer) return;
+    if (Math.hypot(e.touches[0].clientX - sx, e.touches[0].clientY - sy) > 8) cancel();
+  }, { passive: false });
+  el.addEventListener('mouseup',  cancel);
+  el.addEventListener('touchend', cancel);
+}
+
+// ── Global drag handlers ──
+document.addEventListener('mousemove', e => {
+  if (dragState) { moveDrag(e.clientX, e.clientY); e.preventDefault(); }
+});
+document.addEventListener('touchmove', e => {
+  if (dragState) { moveDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }
+}, { passive: false });
+document.addEventListener('mouseup',  () => { if (dragState) endDrag(); });
+document.addEventListener('touchend', () => { if (dragState) endDrag(); });
+
+$('btnReset').onclick = () => {
+  localStorage.removeItem('amb_layout');
+  snapAnimate(getDefaultLayout());
+};
+
+// リサイズ時にレイアウトを画面サイズに合わせて再スケール
+window.addEventListener('resize', () => {
+  if (dragState) return;
+  if (loadLayout()) applyRects(widgetRects);
+  else applyRects(getDefaultLayout());
+});
+
+// ════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════
+applyTheme();
+applyLang();
+updateClock();
+widgetRects = getDefaultLayout();
+loadLayout();
+applyRects(widgetRects);
+WIDGET_IDS.forEach(initWidgetDrag);
+fetchWeather();
+initCalendar();
+</script>
+</body>
+</html>
