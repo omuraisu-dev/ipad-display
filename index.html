@@ -698,6 +698,94 @@ body {
 .cal-day-bar { min-height: clamp(18px, calc(22px * var(--wscale)), 58px); height: 100%; border-radius: 6px; flex: 1; display: flex; align-items: center; padding: 0 7px; overflow: hidden; }
 .cal-day-name { font-size: clamp(8px, calc(10px * var(--wscale)), 26px); font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* ── Time Grid (Day / Week) ── */
+.cal-tgrid-wrap {
+  display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;
+}
+.cal-tgrid-head {
+  display: flex; flex-shrink: 0;
+  border-bottom: 1px solid var(--divider);
+  margin-bottom: 0;
+}
+.cal-tgrid-head-gutter { width: clamp(22px,calc(32px * var(--wscale)),56px); flex-shrink: 0; }
+.cal-tgrid-head-days { display: flex; flex: 1; }
+.cal-tgrid-day-hdr {
+  flex: 1; text-align: center; padding-bottom: 4px;
+}
+.cal-tgrid-day-hdr-name {
+  font-size: clamp(6px,calc(8px * var(--wscale)),18px); font-weight: 700;
+  color: var(--text-3); text-transform: uppercase;
+}
+.cal-tgrid-day-hdr-num {
+  font-size: clamp(9px,calc(13px * var(--wscale)),28px); font-weight: 400;
+  color: var(--text-1); line-height: 1.2;
+}
+.cal-tgrid-day-hdr.tg-today .cal-tgrid-day-hdr-num {
+  color: var(--accent); font-weight: 700;
+}
+.cal-tgrid-body {
+  display: flex; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: none;
+}
+.cal-tgrid-body::-webkit-scrollbar { display: none; }
+.cal-tgrid-gutter {
+  width: clamp(22px,calc(32px * var(--wscale)),56px);
+  flex-shrink: 0; position: relative;
+  min-height: calc(24 * 48px);
+}
+.cal-tgrid-hour-label {
+  position: absolute; right: 4px;
+  font-size: clamp(5px,calc(7px * var(--wscale)),14px);
+  color: var(--text-3); font-variant-numeric: tabular-nums;
+  transform: translateY(-50%); line-height: 1;
+  white-space: nowrap;
+}
+.cal-tgrid-cols {
+  flex: 1; position: relative;
+  display: flex;
+  min-height: calc(24 * 48px);
+}
+.cal-tgrid-col {
+  flex: 1; position: relative; border-left: 1px solid var(--divider);
+}
+.cal-tgrid-col:first-child { border-left: none; }
+.cal-tgrid-hline {
+  position: absolute; left: 0; right: 0;
+  height: 1px; background: var(--divider); pointer-events: none;
+}
+.cal-tgrid-hline-major {
+  background: rgba(128,128,128,0.18);
+}
+.cal-tgrid-now-line {
+  position: absolute; left: 0; right: 0;
+  height: 2px; background: #FF4444; pointer-events: none; z-index: 10;
+}
+.cal-tgrid-now-line::before {
+  content: '';
+  position: absolute; left: -4px; top: -4px;
+  width: 10px; height: 10px; border-radius: 50%; background: #FF4444;
+}
+.cal-tgrid-ev {
+  position: absolute; left: 2px; right: 2px;
+  border-radius: 4px; overflow: hidden;
+  padding: 2px 4px;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  cursor: default; box-sizing: border-box;
+  min-height: 4px;
+}
+.cal-tgrid-ev-name {
+  font-size: clamp(5px,calc(7px * var(--wscale)),14px);
+  font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.cal-tgrid-ev-time {
+  font-size: clamp(4px,calc(6px * var(--wscale)),12px);
+  color: rgba(255,255,255,0.8);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Year Grid */
 .cal-year-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; flex: 1; min-height: 0; overflow: hidden; }
 .cal-ymini { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
@@ -1746,49 +1834,138 @@ function renderCalendarGrid(events) {
   else                            html += renderGridYear(evts, density);
   html += '</div>';
   $('calBody').innerHTML = html;
+  if (calPeriod === 'day' || calPeriod === 'week') _initTimeGrid();
+}
+
+// ── Time grid helpers ──
+const HOUR_PX = 48; // px per hour (will be overridden by CSS var)
+
+function _tgHourHeight(bodyEl) {
+  return bodyEl ? bodyEl.clientHeight / 24 : HOUR_PX;
+}
+
+function _evMinutes(ev) {
+  if (!ev.start?.dateTime) return null;
+  const s = new Date(ev.start.dateTime);
+  return s.getHours() * 60 + s.getMinutes();
+}
+function _evDurMins(ev) {
+  if (!ev.start?.dateTime || !ev.end?.dateTime) return 60;
+  return Math.max(15, (+new Date(ev.end.dateTime) - +new Date(ev.start.dateTime)) / 60000);
+}
+
+function _buildTimeGridHTML(columns, dayHeaders) {
+  // columns: array of {events:[ev,...], isToday, dateObj}
+  const totalHours = 24;
+  // gutter labels
+  let gutterHtml = '';
+  for (let h = 1; h < totalHours; h++) {
+    const label = lang === 'ja' ? `${h}時` : (h === 12 ? '12 PM' : h < 12 ? `${h} AM` : `${h-12} PM`);
+    // top % is (h/24)*100
+    gutterHtml += `<div class="cal-tgrid-hour-label" style="top:${(h/totalHours*100).toFixed(3)}%">${label}</div>`;
+  }
+
+  // day header row
+  let headDaysHtml = dayHeaders.map((hdr, i) => {
+    const col = columns[i];
+    return `<div class="cal-tgrid-day-hdr${col.isToday ? ' tg-today' : ''}">
+      <div class="cal-tgrid-day-hdr-name" style="${i===0?'color:#FF6B6B':i===6&&dayHeaders.length===7?'color:var(--accent)':''}">${hdr.name}</div>
+      <div class="cal-tgrid-day-hdr-num">${hdr.num}</div>
+    </div>`;
+  }).join('');
+
+  // build column interiors
+  let colsHtml = columns.map((col) => {
+    // hour lines
+    let linesHtml = '';
+    for (let h = 0; h < totalHours; h++) {
+      const cls = (h % 1 === 0) ? 'cal-tgrid-hline cal-tgrid-hline-major' : 'cal-tgrid-hline';
+      linesHtml += `<div class="${cls}" style="top:${(h/totalHours*100).toFixed(3)}%"></div>`;
+    }
+    // half-hour lines
+    for (let h = 0; h < totalHours; h++) {
+      linesHtml += `<div class="cal-tgrid-hline" style="top:${((h+0.5)/totalHours*100).toFixed(3)}%;opacity:0.4"></div>`;
+    }
+    // events
+    let evHtml = '';
+    const timedEvts = col.events.filter(ev => ev.start?.dateTime);
+    timedEvts.forEach((ev, i) => {
+      const startMins = _evMinutes(ev);
+      const durMins   = _evDurMins(ev);
+      const topPct    = (startMins / (totalHours * 60) * 100).toFixed(3);
+      const hPct      = (durMins / (totalHours * 60) * 100).toFixed(3);
+      const color     = COLORS[i % COLORS.length];
+      const name      = ev._isTask ? (ev.title||'(無題)') : (ev.summary||'(無題)');
+      const startDt   = new Date(ev.start.dateTime);
+      const timeStr   = startDt.toLocaleTimeString(lang==='ja'?'ja-JP':'en-US',
+        {hour:'2-digit',minute:'2-digit',hour12:lang==='en'});
+      evHtml += `<div class="cal-tgrid-ev" style="top:${topPct}%;height:${hPct}%;background:${color}">
+        <div class="cal-tgrid-ev-name">${esc(name)}</div>
+        <div class="cal-tgrid-ev-time">${timeStr}</div>
+      </div>`;
+    });
+    // now line
+    const nowLine = col.isToday
+      ? `<div class="cal-tgrid-now-line" id="calNowLine" style="top:0%"></div>`
+      : '';
+    return `<div class="cal-tgrid-col">${linesHtml}${evHtml}${nowLine}</div>`;
+  }).join('');
+
+  return `<div class="cal-tgrid-wrap">
+    <div class="cal-tgrid-head">
+      <div class="cal-tgrid-head-gutter"></div>
+      <div class="cal-tgrid-head-days">${headDaysHtml}</div>
+    </div>
+    <div class="cal-tgrid-body" id="calTGridBody">
+      <div class="cal-tgrid-gutter">${gutterHtml}</div>
+      <div class="cal-tgrid-cols" id="calTGridCols">${colsHtml}</div>
+    </div>
+  </div>`;
+}
+
+let _tgNowTimer = null;
+function _initTimeGrid() {
+  clearInterval(_tgNowTimer);
+  function updateNowLine() {
+    const line = document.getElementById('calNowLine');
+    if (!line) { clearInterval(_tgNowTimer); return; }
+    const now = new Date();
+    const mins = now.getHours() * 60 + now.getMinutes();
+    const pct  = (mins / (24 * 60) * 100).toFixed(3);
+    line.style.top = pct + '%';
+  }
+  updateNowLine();
+  _tgNowTimer = setInterval(updateNowLine, 30000);
+  // scroll so current time is visible (~30% from top)
+  requestAnimationFrame(() => {
+    const body = document.getElementById('calTGridBody');
+    if (!body) return;
+    const now = new Date();
+    const pct = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
+    const scrollTarget = body.scrollHeight * pct - body.clientHeight * 0.3;
+    body.scrollTop = Math.max(0, scrollTarget);
+  });
 }
 
 function renderGridDay(evts, density) {
   const now = new Date();
   const t = T[lang];
+  const dayNames = lang === 'ja'
+    ? ['日','月','火','水','木','金','土']
+    : ['Su','Mo','Tu','We','Th','Fr','Sa'];
   const todayLabel = lang === 'ja'
     ? `${now.getMonth()+1}月${now.getDate()}日 (${t.wd[now.getDay()].slice(0,1)})`
     : `${t.mo[now.getMonth()]} ${now.getDate()}`;
   if (density === 'small') {
     return `<div class="cal-day-head">${todayLabel}</div>`;
   }
-  const maxEvts = density === 'medium' ? 2 : Infinity;
   const todayEvts = evts.filter(ev => {
     const d = _evDate(ev);
     return d && d.toDateString() === now.toDateString();
-  }).sort((a, b) => {
-    const ta = a.start?.dateTime ? new Date(a.start.dateTime) : new Date(0);
-    const tb = b.start?.dateTime ? new Date(b.start.dateTime) : new Date(0);
-    return ta - tb;
   });
-  const evHtml = todayEvts.length === 0
-    ? `<div class="cal-empty" style="padding:8px 0">
-        <div class="cal-empty-icon" style="font-size:clamp(18px,calc(28px*var(--wscale)),80px)">✨</div>
-      </div>`
-    : todayEvts.slice(0, maxEvts).map((ev, i) => {
-        const isAllDay = ev._isTask ? false : !ev.start?.dateTime;
-        let timeStr = isAllDay ? t.allday : '';
-        if (!isAllDay && ev.start?.dateTime) {
-          timeStr = new Date(ev.start.dateTime).toLocaleTimeString(
-            lang === 'ja' ? 'ja-JP' : 'en-US',
-            { hour: '2-digit', minute: '2-digit', hour12: lang === 'en' });
-        }
-        const color = COLORS[i % COLORS.length];
-        const name = ev._isTask ? (ev.title || '(無題)') : (ev.summary || '(無題)');
-        return `<div class="cal-day-ev">
-          <div class="cal-day-time">${timeStr}</div>
-          <div class="cal-day-bar" style="background:${color}">
-            <div class="cal-day-name">${esc(name)}</div>
-          </div>
-        </div>`;
-      }).join('');
-  return `<div class="cal-day-head">${todayLabel}</div>
-    <div class="cal-day-evs">${evHtml}</div>`;
+  const columns = [{ events: todayEvts, isToday: true, dateObj: now }];
+  const headers = [{ name: dayNames[now.getDay()], num: now.getDate() }];
+  return _buildTimeGridHTML(columns, headers);
 }
 
 function renderGridWeek(evts, density) {
@@ -1799,34 +1976,31 @@ function renderGridWeek(evts, density) {
   const dayNames = lang === 'ja'
     ? ['日','月','火','水','木','金','土']
     : ['Su','Mo','Tu','We','Th','Fr','Sa'];
-  const byDay = Array.from({length:7}, () => []);
-  evts.forEach((ev, ei) => {
-    const d = _evDate(ev);
-    if (!d) return;
-    const diff = Math.floor((+d - +weekStart) / 86400000);
-    if (diff >= 0 && diff < 7) byDay[diff].push({ ev, color: COLORS[ei % COLORS.length] });
-  });
-  const headCols = Array.from({length:7}, (_, i) => {
-    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
-    const isToday = d.toDateString() === now.toDateString();
-    const nameClr = i === 0 ? 'color:#FF6B6B' : i === 6 ? 'color:var(--accent)' : '';
-    return `<div class="cal-wday-col${isToday ? ' cal-wday-today' : ''}">
-      <div class="cal-wday-name" style="${nameClr}">${dayNames[i]}</div>
-      <div class="cal-wday-num">${d.getDate()}</div>
-    </div>`;
-  }).join('');
   if (density === 'small') {
+    const headCols = Array.from({length:7}, (_, i) => {
+      const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+      const isToday = d.toDateString() === now.toDateString();
+      const nameClr = i === 0 ? 'color:#FF6B6B' : i === 6 ? 'color:var(--accent)' : '';
+      return `<div class="cal-wday-col${isToday ? ' cal-wday-today' : ''}">
+        <div class="cal-wday-name" style="${nameClr}">${dayNames[i]}</div>
+        <div class="cal-wday-num">${d.getDate()}</div>
+      </div>`;
+    }).join('');
     return `<div class="cal-week-head">${headCols}</div>`;
   }
-  const maxPerDay = density === 'medium' ? 1 : 5;
-  const bodyCols = byDay.map(dayEvts =>
-    `<div class="cal-wday-evs">${dayEvts.slice(0, maxPerDay).map(({ev,color}) => {
-      const name = ev._isTask ? (ev.title||'?') : (ev.summary||'?');
-      return `<div class="cal-wev" style="background:${color}">${esc(name)}</div>`;
-    }).join('')}</div>`
-  ).join('');
-  return `<div class="cal-week-head">${headCols}</div>
-    <div class="cal-week-body">${bodyCols}</div>`;
+  const columns = Array.from({length:7}, (_, i) => {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+    const dayEvts = evts.filter(ev => {
+      const ed = _evDate(ev);
+      return ed && ed.toDateString() === d.toDateString();
+    });
+    return { events: dayEvts, isToday: d.toDateString() === now.toDateString(), dateObj: d };
+  });
+  const headers = Array.from({length:7}, (_, i) => {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+    return { name: dayNames[i], num: d.getDate() };
+  });
+  return _buildTimeGridHTML(columns, headers);
 }
 
 function renderGridMonth(evts, density) {
