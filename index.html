@@ -1818,7 +1818,7 @@ function _evDate(ev) {
 
 function getCalGridDensity() {
   const h = $('calendarWidget').clientHeight;
-  return h <= 250 ? 'small' : h <= 400 ? 'medium' : 'large';
+  return h <= 400 ? 'small' : h <= 600 ? 'medium' : 'large';
 }
 
 function renderCalendarGrid(events) {
@@ -1856,7 +1856,7 @@ function _buildTimeGridHTML(columns, dayHeaders) {
   const totalHours = 24;
   // determine label interval based on widget height
   const _widgetH = $('calendarWidget').clientHeight;
-  const _labelInterval = _widgetH < 350 ? 3 : _widgetH < 500 ? 2 : 1;
+  const _labelInterval = _widgetH < 600 ? 6 : _widgetH < 900 ? 3 : 2;
   const _estimatedBodyH = Math.max(_widgetH - 60, 100);
   // gutter labels
   let gutterHtml = '';
@@ -1900,11 +1900,8 @@ function _buildTimeGridHTML(columns, dayHeaders) {
       const startDt   = new Date(ev.start.dateTime);
       const timeStr   = startDt.toLocaleTimeString(lang==='ja'?'ja-JP':'en-US',
         {hour:'2-digit',minute:'2-digit',hour12:lang==='en'});
-      const evHeightPx = (durMins / (totalHours * 60)) * _estimatedBodyH;
-      const showTime  = evHeightPx >= 22;
       evHtml += `<div class="cal-tgrid-ev" style="top:${topPct}%;height:${hPct}%;background:${color}">
         <div class="cal-tgrid-ev-name">${esc(name)}</div>
-        ${showTime ? `<div class="cal-tgrid-ev-time">${timeStr}</div>` : ''}
       </div>`;
     });
     // now line
