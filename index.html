@@ -36,6 +36,7 @@ body.dark {
   --ctrl-bg: rgba(255,255,255,0.09);
   --ctrl-border: rgba(255,255,255,0.12);
   --ctrl-text: rgba(255,255,255,0.82);
+  --rh-clr: rgba(90,175,255,0.38);
 }
 
 /* ── Light theme ── */
@@ -55,6 +56,7 @@ body.light {
   --ctrl-bg: rgba(255,255,255,0.78);
   --ctrl-border: rgba(0,0,0,0.10);
   --ctrl-text: rgba(0,0,0,0.72);
+  --rh-clr: rgba(0,122,255,0.30);
 }
 
 body {
@@ -94,6 +96,71 @@ body {
   transition: opacity 0.18s, transform 0.18s;
 }
 .ctrl-btn:active { opacity: 0.7; transform: scale(0.95); }
+#btnSettings { padding: 8px 11px; display: flex; align-items: center; justify-content: center; }
+
+/* ── Global Settings Panel ── */
+.settings-panel {
+  position: fixed;
+  top: 58px; right: 18px;
+  background: var(--card-bg);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 20px 22px;
+  min-width: 300px;
+  z-index: 900;
+  display: none;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+}
+.settings-panel.open { display: block; }
+.settings-title {
+  font-size: 17px; font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 18px;
+  transition: color var(--tr);
+}
+.settings-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  gap: 14px;
+  font-size: 15px; font-weight: 500;
+  color: var(--text-1);
+  transition: color var(--tr);
+}
+.settings-row + .settings-row { border-top: 1px solid var(--divider); }
+.settings-sep { height: 1px; background: var(--divider); margin: 6px 0; }
+.seg-group { display: flex; gap: 6px; }
+.seg-btn {
+  background: var(--ctrl-bg);
+  border: 1px solid var(--ctrl-border);
+  color: var(--ctrl-text);
+  border-radius: 10px;
+  padding: 6px 13px;
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.seg-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.settings-action-btn {
+  background: var(--ctrl-bg);
+  border: 1px solid var(--ctrl-border);
+  color: var(--ctrl-text);
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  display: inline-block;
+  text-align: center;
+}
+.settings-action-btn:active { opacity: 0.7; }
 
 /* ── Widget base ── */
 .widget {
@@ -104,8 +171,12 @@ body {
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
   box-shadow: var(--card-glow);
-  padding: 22px 24px;
+  --wscale: 1;
+  padding: clamp(10px, calc(22px * var(--wscale)), 32px) clamp(10px, calc(24px * var(--wscale)), 36px);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   transition: background var(--tr), border-color var(--tr),
               box-shadow 0.2s, transform 0.15s ease-out, opacity 0.15s;
   will-change: transform;
@@ -152,7 +223,7 @@ body {
    ════════════════════════════════ */
 
 .clock-weekday {
-  font-size: 11px; font-weight: 600;
+  font-size: clamp(9px, calc(11px * var(--wscale)), 40px); font-weight: 600;
   color: var(--accent);
   text-transform: uppercase; letter-spacing: 2px;
   margin-bottom: 8px;
@@ -164,20 +235,20 @@ body {
 }
 
 .clock-hm {
-  font-size: 78px; font-weight: 200;
-  color: var(--text-1); letter-spacing: -3px; line-height: 1;
+  font-size: clamp(32px, calc(78px * var(--wscale)), 280px); font-weight: 200;
+  color: var(--text-1); letter-spacing: calc(-3px * var(--wscale)); line-height: 1;
   font-variant-numeric: tabular-nums;
   transition: color var(--tr);
 }
 
 .clock-sep {
-  font-size: 78px; font-weight: 200;
-  color: var(--text-1); letter-spacing: -3px;
+  font-size: clamp(32px, calc(78px * var(--wscale)), 280px); font-weight: 200;
+  color: var(--text-1); letter-spacing: calc(-3px * var(--wscale));
   transition: opacity 0.5s, color var(--tr);
 }
 
 .clock-sec {
-  font-size: 26px; font-weight: 300;
+  font-size: clamp(12px, calc(26px * var(--wscale)), 92px); font-weight: 300;
   color: var(--text-2); letter-spacing: -0.5px;
   align-self: flex-end; margin-bottom: 10px; margin-left: 4px;
   font-variant-numeric: tabular-nums;
@@ -186,10 +257,113 @@ body {
 
 .clock-date {
   margin-top: 10px;
-  font-size: 15px; font-weight: 400;
+  font-size: clamp(10px, calc(15px * var(--wscale)), 52px); font-weight: 400;
   color: var(--text-2); letter-spacing: 0.1px;
   transition: color var(--tr);
 }
+
+
+#clkCanvas {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+/* ── Dividers ── */
+.divider {
+  position: absolute; z-index: 150;
+}
+.divider-v { cursor: ew-resize; }
+.divider-h { cursor: ns-resize; }
+.divider::after {
+  content: '';
+  position: absolute;
+  background: var(--divider);
+  border-radius: 3px;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.divider-v::after {
+  width: 5px; top: 0; bottom: 0;
+  left: 50%; transform: translateX(-50%);
+}
+.divider-h::after {
+  height: 5px; left: 0; right: 0;
+  top: 50%; transform: translateY(-50%);
+}
+.divider:hover::after,
+.divider.dvr-active::after {
+  background: var(--accent);
+  box-shadow: 0 0 16px 5px var(--accent);
+}
+
+.clock-opts-panel {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--card-bg);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 21px 24px;
+  z-index: 600;
+  display: none;
+  min-width: 315px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+}
+.clock-opts-panel.open { display: block; }
+
+.clk-mode-seg {
+  display: flex; gap: 9px;
+  margin-bottom: 18px;
+}
+.clk-mode-pill {
+  flex: 1;
+  padding: 10px 0;
+  background: rgba(128,128,128,0.14);
+  border: 1px solid rgba(128,128,128,0.18);
+  border-radius: 12px;
+  font-family: var(--font);
+  font-size: 18px; font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.clk-mode-pill.active { background: var(--accent); border-color: transparent; color: #fff; }
+.clk-mode-pill:active { opacity: 0.75; }
+
+.clock-opt-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 27px; padding: 11px 0;
+  font-size: 18px; font-weight: 500;
+  color: var(--text-1);
+  transition: color var(--tr);
+}
+.clock-opt-row + .clock-opt-row {
+  border-top: 1px solid var(--divider);
+}
+
+.clock-opt-toggle {
+  flex-shrink: 0;
+  width: 51px; height: 28px;
+  border-radius: 14px;
+  border: none; cursor: pointer;
+  position: relative;
+  background: rgba(128,128,128,0.28);
+  transition: background 0.22s;
+}
+.clock-opt-toggle.on { background: var(--accent); }
+.clock-opt-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3.5px; left: 3.5px;
+  width: 21px; height: 21px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.22s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.clock-opt-toggle.on::after { transform: translateX(23px); }
 
 /* ════════════════════════════════
    WEATHER WIDGET
@@ -197,7 +371,7 @@ body {
 
 .wx-location {
   display: flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 600;
+  font-size: clamp(9px, calc(11px * var(--wscale)), 36px); font-weight: 600;
   color: var(--text-2);
   text-transform: uppercase; letter-spacing: 1.4px;
   margin-bottom: 14px;
@@ -207,23 +381,23 @@ body {
 
 .wx-main { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
 
-.wx-icon { font-size: 54px; line-height: 1; margin-top: -2px; }
+.wx-icon { font-size: clamp(22px, calc(54px * var(--wscale)), 180px); line-height: 1; margin-top: -2px; }
 
 .wx-right {}
 
 .wx-temp {
-  font-size: 54px; font-weight: 200;
-  color: var(--text-1); letter-spacing: -2px; line-height: 1;
+  font-size: clamp(22px, calc(54px * var(--wscale)), 180px); font-weight: 200;
+  color: var(--text-1); letter-spacing: calc(-2px * var(--wscale)); line-height: 1;
   font-variant-numeric: tabular-nums;
   transition: color var(--tr);
 }
 .wx-unit {
-  font-size: 24px; font-weight: 300;
+  font-size: clamp(12px, calc(24px * var(--wscale)), 80px); font-weight: 300;
   color: var(--text-2); vertical-align: super;
   transition: color var(--tr);
 }
 .wx-desc {
-  font-size: 13px; font-weight: 400;
+  font-size: clamp(10px, calc(13px * var(--wscale)), 44px); font-weight: 400;
   color: var(--text-2); margin-top: 4px;
   transition: color var(--tr);
 }
@@ -234,13 +408,13 @@ body {
 
 .wx-cell {}
 .wx-cell-label {
-  font-size: 9.5px; font-weight: 600;
+  font-size: clamp(8px, calc(9.5px * var(--wscale)), 28px); font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.9px;
   color: var(--text-3); margin-bottom: 2px;
   transition: color var(--tr);
 }
 .wx-cell-val {
-  font-size: 14px; font-weight: 400;
+  font-size: clamp(10px, calc(14px * var(--wscale)), 44px); font-weight: 400;
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
   transition: color var(--tr);
@@ -255,7 +429,7 @@ body {
   margin-bottom: 16px;
 }
 .cal-title {
-  font-size: 11px; font-weight: 600;
+  font-size: clamp(9px, calc(11px * var(--wscale)), 36px); font-weight: 600;
   color: var(--text-2);
   text-transform: uppercase; letter-spacing: 1.4px;
   transition: color var(--tr);
@@ -264,18 +438,98 @@ body {
   background: var(--accent); color: #fff;
   border: none; border-radius: 10px;
   padding: 5px 12px;
-  font-family: var(--font); font-size: 12px; font-weight: 500;
+  font-family: var(--font); font-size: clamp(10px, calc(12px * var(--wscale)), 36px); font-weight: 500;
   cursor: pointer; transition: opacity 0.18s;
 }
 .cal-action-btn:active { opacity: 0.75; }
+
+/* ── Calendar Settings Panel ── */
+.cal-opts-panel {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--card-bg);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 24px;
+  z-index: 600;
+  display: none;
+  min-width: 360px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+}
+.cal-opts-panel.open { display: block; }
+
+.cal-period-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 27px;
+}
+.cal-period-btn {
+  padding: 19px 12px;
+  background: rgba(128,128,128,0.14);
+  border: 1px solid rgba(128,128,128,0.18);
+  border-radius: 15px;
+  font-family: var(--font);
+  font-size: 21px; font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.cal-period-btn.active { background: var(--accent); border-color: transparent; color: #fff; }
+.cal-period-btn:active { opacity: 0.75; }
+
+.cal-size-label {
+  font-size: 16px; font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.9px;
+  margin-bottom: 15px;
+  transition: color var(--tr);
+}
+.cal-size-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  margin: 6px 0 15px;
+}
+.cal-size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.cal-size-slider::-moz-range-thumb {
+  width: 42px; height: 42px;
+  border-radius: 50%; border: none;
+  background: var(--accent);
+  cursor: pointer;
+}
+.cal-size-ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 6px;
+}
+.cal-size-ticks span {
+  font-size: 16px; font-weight: 600;
+  color: var(--text-3);
+  transition: color 0.15s;
+}
+.cal-size-ticks span.tick-active { color: var(--accent); }
 
 /* Setup prompt */
 .cal-empty {
   text-align: center; padding: 18px 0 4px;
 }
-.cal-empty-icon { font-size: 34px; margin-bottom: 10px; }
+.cal-empty-icon { font-size: clamp(22px, calc(34px * var(--wscale)), 108px); margin-bottom: 10px; }
 .cal-empty-text {
-  font-size: 13px; line-height: 1.55;
+  font-size: clamp(10px, calc(13px * var(--wscale)), 40px); line-height: 1.55;
   color: var(--text-2);
   transition: color var(--tr);
 }
@@ -297,17 +551,45 @@ body {
 }
 .event-info { flex: 1; min-width: 0; }
 .event-name {
-  font-size: 14px; font-weight: 400;
+  font-size: clamp(10px, calc(14px * var(--wscale)), 44px); font-weight: 400;
   color: var(--text-1);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   transition: color var(--tr);
 }
 .event-time {
-  font-size: 12px; font-weight: 400;
+  font-size: clamp(9px, calc(12px * var(--wscale)), 36px); font-weight: 400;
   color: var(--text-2); margin-top: 2px;
   font-variant-numeric: tabular-nums;
   transition: color var(--tr);
 }
+
+/* ── Weather Settings Panel ── */
+.wx-opts-panel {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--card-bg);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 21px 24px;
+  z-index: 600;
+  display: none;
+  min-width: 360px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+}
+.wx-opts-panel.open { display: block; }
+
+.wx-opt-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px; padding: 15px 0;
+  font-size: 19px; font-weight: 500;
+  color: var(--text-1);
+  transition: color var(--tr);
+}
+.wx-opt-row + .wx-opt-row { border-top: 1px solid var(--divider); }
+.wx-size-sep { height: 1px; background: var(--divider); margin: 18px 0; }
 
 /* ════════════════════════════════
    SETUP MODAL
@@ -385,19 +667,53 @@ body {
 
   <!-- Controls -->
   <div id="controls">
-    <button class="ctrl-btn" id="btnLang">EN</button>
-    <button class="ctrl-btn" id="btnTheme">☀️</button>
-    <button class="ctrl-btn" id="btnReset" title="Reset layout">⊹</button>
+    <button class="ctrl-btn" id="btnSettings" title="設定">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
   </div>
 
   <!-- ── Clock Widget ── -->
   <div class="widget" id="clockWidget">
-    <div class="clock-weekday" id="clkDay"></div>
-    <div class="clock-row">
-      <span class="clock-hm" id="clkHM">00:00</span>
-      <span class="clock-sec" id="clkS">00</span>
+    <div id="clockDigital">
+      <div class="clock-weekday" id="clkDay"></div>
+      <div class="clock-row">
+        <span class="clock-hm" id="clkHM">00:00</span>
+        <span class="clock-sec" id="clkS">00</span>
+      </div>
+      <div class="clock-date" id="clkDate"></div>
     </div>
-    <div class="clock-date" id="clkDate"></div>
+    <canvas id="clkCanvas"></canvas>
+  </div>
+
+  <!-- ── Clock Settings Panel ── -->
+  <div class="clock-opts-panel" id="clkOptsPanel">
+    <div class="clk-mode-seg">
+      <button class="clk-mode-pill" id="clkPillDigital">D</button>
+      <button class="clk-mode-pill" id="clkPillA1">A1</button>
+      <button class="clk-mode-pill" id="clkPillA2">A2</button>
+    </div>
+    <div id="clkDigitalOpts">
+      <div class="clock-opt-row">
+        <span id="clkOptLbWeekday">曜日</span>
+        <button class="clock-opt-toggle on" id="clkTogWeekday"></button>
+      </div>
+      <div class="clock-opt-row">
+        <span id="clkOptLbSec">秒</span>
+        <button class="clock-opt-toggle on" id="clkTogSec"></button>
+      </div>
+      <div class="clock-opt-row">
+        <span id="clkOptLbDate">日付</span>
+        <button class="clock-opt-toggle on" id="clkTogDate"></button>
+      </div>
+    </div>
+    <div class="wx-size-sep"></div>
+    <div class="cal-size-label" id="clkSizeLb">コンテンツサイズ</div>
+    <input class="cal-size-slider" type="range" id="clkSizeSlider" min="0" max="4" step="1" value="2">
+    <div class="cal-size-ticks">
+      <span>XS</span><span>S</span><span>M</span><span>L</span><span>XL</span>
+    </div>
   </div>
 
   <!-- ── Weather Widget ── -->
@@ -450,6 +766,71 @@ body {
     </div>
   </div>
 
+  <!-- ── Weather Settings Panel ── -->
+  <div class="wx-opts-panel" id="wxOptsPanel">
+    <div class="wx-opt-row"><span id="wxOptLbIcon">天気アイコン</span><button class="clock-opt-toggle on" id="wxTogIcon"></button></div>
+    <div class="wx-opt-row"><span id="wxOptLbTemp">気温</span><button class="clock-opt-toggle on" id="wxTogTemp"></button></div>
+    <div class="wx-opt-row"><span id="wxOptLbDesc">天気の説明</span><button class="clock-opt-toggle on" id="wxTogDesc"></button></div>
+    <div class="wx-opt-row"><span id="wxOptLbHumidity">湿度</span><button class="clock-opt-toggle on" id="wxTogHumidity"></button></div>
+    <div class="wx-opt-row"><span id="wxOptLbWind">風速</span><button class="clock-opt-toggle on" id="wxTogWind"></button></div>
+    <div class="wx-opt-row"><span id="wxOptLbHighlow">最高・最低気温</span><button class="clock-opt-toggle on" id="wxTogHighlow"></button></div>
+    <div class="wx-size-sep"></div>
+    <div class="cal-size-label" id="wxSizeLb">コンテンツサイズ</div>
+    <input class="cal-size-slider" type="range" id="wxSizeSlider" min="0" max="4" step="1" value="2">
+    <div class="cal-size-ticks">
+      <span>XS</span><span>S</span><span>M</span><span>L</span><span>XL</span>
+    </div>
+  </div>
+
+  <!-- ── Calendar Settings Panel ── -->
+  <div class="cal-opts-panel" id="calOptsPanel">
+    <div class="cal-period-grid">
+      <button class="cal-period-btn" id="calPDay">1日</button>
+      <button class="cal-period-btn" id="calPWeek">1週間</button>
+      <button class="cal-period-btn" id="calPMonth">1ヶ月</button>
+      <button class="cal-period-btn" id="calPYear">1年</button>
+    </div>
+    <div class="cal-size-label" id="calSizeLb">コンテンツサイズ</div>
+    <input class="cal-size-slider" type="range" id="calSizeSlider" min="0" max="4" step="1" value="2">
+    <div class="cal-size-ticks">
+      <span>XS</span><span>S</span><span>M</span><span>L</span><span>XL</span>
+    </div>
+  </div>
+
+  <!-- ── Global Settings Panel ── -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-title" id="settingsTitleLb">設定</div>
+    <div class="settings-row">
+      <span id="settingsLbLang">言語</span>
+      <div class="seg-group">
+        <button class="seg-btn" id="settingsBtnJa">日本語</button>
+        <button class="seg-btn" id="settingsBtnEn">English</button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <span id="settingsLbTheme">テーマ</span>
+      <div class="seg-group">
+        <button class="seg-btn" id="settingsBtnDark">ダーク</button>
+        <button class="seg-btn" id="settingsBtnLight">ライト</button>
+      </div>
+    </div>
+    <div class="settings-sep"></div>
+    <div class="settings-row">
+      <span id="settingsLbReset">レイアウト</span>
+      <button class="settings-action-btn" id="settingsBtnReset">リセット</button>
+    </div>
+    <div class="settings-sep"></div>
+    <div class="settings-row">
+      <span id="settingsLbBg">背景画像</span>
+      <label class="settings-action-btn" for="bgFileInput" id="settingsBtnBg">選択</label>
+      <input type="file" id="bgFileInput" accept="image/*" style="display:none">
+    </div>
+    <div class="settings-row">
+      <span id="settingsLbBgReset">デフォルト背景</span>
+      <button class="settings-action-btn" id="settingsBtnBgReset">元に戻す</button>
+    </div>
+  </div>
+
 </div><!-- #app -->
 
 <!-- ── Setup Modal ── -->
@@ -478,12 +859,26 @@ body {
 // ════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════
-let lang  = localStorage.getItem('amb_lang')  || 'ja';
-let theme = localStorage.getItem('amb_theme') || 'dark';
+let lang      = localStorage.getItem('amb_lang')       || 'ja';
+let theme     = localStorage.getItem('amb_theme')      || 'dark';
+let clockMode = localStorage.getItem('amb_clock_mode') || 'digital';
+let clkOpts   = JSON.parse(localStorage.getItem('amb_clk_opts') || '{"weekday":true,"sec":true,"date":true}');
 let _weatherData = null;
 let _calEvents   = null;
 let _googleToken = null;
 let _tokenTimer  = null;
+
+const CAL_SCALE_VALUES = [1.3, 1.6, 2.0, 2.5, 3.0];
+const CAL_PERIOD_DAYS  = { day: 1, week: 7, month: 30, year: 365 };
+let calPeriod    = localStorage.getItem('cal_period') || 'day';
+let calScaleStep = parseInt(localStorage.getItem('cal_scale') || '2');
+
+const CLK_SCALE_VALUES = [1.3, 1.6, 2.0, 2.5, 3.0];
+let clkScaleStep = parseInt(localStorage.getItem('clk_scale') || '2');
+const WX_SCALE_VALUES = [1.3, 1.6, 2.0, 2.5, 3.0];
+let wxOpts = JSON.parse(localStorage.getItem('wx_opts') ||
+  '{"icon":true,"temp":true,"desc":true,"humidity":true,"wind":true,"highlow":true}');
+let wxScaleStep = parseInt(localStorage.getItem('wx_scale') || '2');
 
 const COLORS = ['#FF6B6B','#4EC9C4','#5AAFFF','#A78BFA','#34D399','#F59E0B'];
 
@@ -507,6 +902,12 @@ const T = {
       <li>Google Calendar APIを有効化</li></ol>`,
     mInput:'クライアントID（xxxxx.apps.googleusercontent.com）',
     cancel:'キャンセル', save:'保存して接続',
+    optWeekday:'曜日', optSec:'秒', optDate:'日付', clkSizeLabel:'コンテンツサイズ',
+    periodDay:'1日', periodWeek:'1週間', periodMonth:'1ヶ月', periodYear:'1年',
+    calSizeLabel:'コンテンツサイズ',
+    wxOptIcon:'天気アイコン', wxOptTemp:'気温', wxOptDesc:'天気の説明',
+    wxOptHumidity:'湿度', wxOptWind:'風速', wxOptHighlow:'最高・最低気温',
+    wxSizeLabel:'コンテンツサイズ',
     wx: {
       0:'快晴',1:'晴れ',2:'一部曇り',3:'曇り',
       45:'霧',48:'霧',
@@ -533,6 +934,12 @@ const T = {
       <li>Enable Google Calendar API</li></ol>`,
     mInput:'Client ID (xxxxx.apps.googleusercontent.com)',
     cancel:'Cancel', save:'Save & Connect',
+    optWeekday:'Weekday', optSec:'Seconds', optDate:'Date', clkSizeLabel:'Content Size',
+    periodDay:'1 Day', periodWeek:'1 Week', periodMonth:'1 Month', periodYear:'1 Year',
+    calSizeLabel:'Content Size',
+    wxOptIcon:'Weather Icon', wxOptTemp:'Temperature', wxOptDesc:'Description',
+    wxOptHumidity:'Humidity', wxOptWind:'Wind Speed', wxOptHighlow:'High / Low',
+    wxSizeLabel:'Content Size',
     wx: {
       0:'Clear Sky',1:'Mainly Clear',2:'Partly Cloudy',3:'Overcast',
       45:'Foggy',48:'Foggy',
@@ -566,19 +973,18 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 // ════════════════════════════════════════════
 function applyTheme() {
   document.body.className = theme;
-  $('btnTheme').textContent = theme === 'dark' ? '☀️' : '🌙';
+  $('settingsBtnDark').classList.toggle('active',  theme === 'dark');
+  $('settingsBtnLight').classList.toggle('active', theme === 'light');
 }
-$('btnTheme').onclick = () => {
-  theme = theme === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('amb_theme', theme);
-  applyTheme();
-};
+$('settingsBtnDark').onclick  = e => { e.stopPropagation(); theme = 'dark';  localStorage.setItem('amb_theme', theme); applyTheme(); };
+$('settingsBtnLight').onclick = e => { e.stopPropagation(); theme = 'light'; localStorage.setItem('amb_theme', theme); applyTheme(); };
 
 // ════════════════════════════════════════════
 //  LANGUAGE
 // ════════════════════════════════════════════
 function applyLang() {
-  $('btnLang').textContent  = lang === 'ja' ? 'EN' : '日';
+  $('settingsBtnJa').classList.toggle('active', lang === 'ja');
+  $('settingsBtnEn').classList.toggle('active', lang === 'en');
   const t = T[lang];
   $('lbHumidity').textContent = t.humidity;
   $('lbWind').textContent     = t.wind;
@@ -590,32 +996,408 @@ function applyLang() {
   $('mTitle').textContent     = t.mTitle;
   $('mDesc').innerHTML        = t.mDesc;
   $('mInput').placeholder     = t.mInput;
-  $('mCancel').textContent    = t.cancel;
-  $('mSave').textContent      = t.save;
+  $('mCancel').textContent         = t.cancel;
+  $('mSave').textContent           = t.save;
+  $('clkOptLbWeekday').textContent = t.optWeekday;
+  $('clkOptLbSec').textContent     = t.optSec;
+  $('clkOptLbDate').textContent    = t.optDate;
+  $('clkSizeLb').textContent       = t.clkSizeLabel;
+  $('calSizeLb').textContent         = t.calSizeLabel;
+  $('calPDay').textContent           = t.periodDay;
+  $('wxSizeLb').textContent          = t.wxSizeLabel;
+  $('wxOptLbIcon').textContent       = t.wxOptIcon;
+  $('wxOptLbTemp').textContent       = t.wxOptTemp;
+  $('wxOptLbDesc').textContent       = t.wxOptDesc;
+  $('wxOptLbHumidity').textContent   = t.wxOptHumidity;
+  $('wxOptLbWind').textContent       = t.wxOptWind;
+  $('wxOptLbHighlow').textContent    = t.wxOptHighlow;
+  $('calPWeek').textContent        = t.periodWeek;
+  $('calPMonth').textContent       = t.periodMonth;
+  $('calPYear').textContent        = t.periodYear;
   // re-render weather desc & calendar with new lang
   if (_weatherData) renderWeather(_weatherData);
   renderCalendar(_calEvents);
   updateClock();
 }
-$('btnLang').onclick = () => {
-  lang = lang === 'ja' ? 'en' : 'ja';
-  localStorage.setItem('amb_lang', lang);
-  applyLang();
-};
+$('settingsBtnJa').onclick = e => { e.stopPropagation(); lang = 'ja'; localStorage.setItem('amb_lang', lang); applyLang(); };
+$('settingsBtnEn').onclick = e => { e.stopPropagation(); lang = 'en'; localStorage.setItem('amb_lang', lang); applyLang(); };
 
 // ════════════════════════════════════════════
 //  CLOCK
 // ════════════════════════════════════════════
+const CLOCK_MODES  = ['digital', 'analog-simple', 'analog-classic'];
+const CLOCK_LABELS = { digital: 'D', 'analog-simple': 'A1', 'analog-classic': 'A2' };
+
+let _clockAnimId = null;
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
 function updateClock() {
+  if (clockMode !== 'digital') return;
   const n = new Date(), t = T[lang];
-  const hm = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
-  $('clkHM').textContent  = hm;
-  $('clkS').textContent   = pad(n.getSeconds());
-  $('clkDay').textContent = t.wd[n.getDay()];
+  $('clkHM').textContent   = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+  $('clkS').textContent    = pad(n.getSeconds());
+  $('clkDay').textContent  = t.wd[n.getDay()];
   $('clkDate').textContent = t.dateFmt(n);
 }
-function pad(n){ return String(n).padStart(2,'0'); }
 setInterval(updateClock, 1000);
+
+function setClockMode(mode) {
+  clockMode = mode;
+  localStorage.setItem('amb_clock_mode', mode);
+  if (mode === 'digital') {
+    $('clockDigital').style.display = '';
+    $('clkCanvas').style.display    = 'none';
+    cancelAnimationFrame(_clockAnimId); _clockAnimId = null;
+    updateClock();
+  } else {
+    $('clockDigital').style.display = 'none';
+    $('clkCanvas').style.display    = 'block';
+    resizeClockCanvas();
+    startAnalogClock();
+  }
+}
+
+// ── Clock display options ──
+function saveClkOpts() { localStorage.setItem('amb_clk_opts', JSON.stringify(clkOpts)); }
+
+function applyClkOpts() {
+  $('clkDay').style.display  = clkOpts.weekday ? '' : 'none';
+  $('clkS').style.display    = clkOpts.sec     ? '' : 'none';
+  $('clkDate').style.display = clkOpts.date    ? '' : 'none';
+  $('clkTogWeekday').className = 'clock-opt-toggle' + (clkOpts.weekday ? ' on' : '');
+  $('clkTogSec').className     = 'clock-opt-toggle' + (clkOpts.sec     ? ' on' : '');
+  $('clkTogDate').className    = 'clock-opt-toggle' + (clkOpts.date    ? ' on' : '');
+}
+
+['clkTogWeekday','clkTogSec','clkTogDate'].forEach((id, i) => {
+  const key = ['weekday','sec','date'][i];
+  $(id).onclick = e => {
+    e.stopPropagation();
+    clkOpts[key] = !clkOpts[key];
+    saveClkOpts();
+    applyClkOpts();
+  };
+});
+
+// ── Clock settings panel ──
+function _updateClockPanelUI() {
+  $('clkPillDigital').classList.toggle('active', clockMode === 'digital');
+  $('clkPillA1').classList.toggle('active',      clockMode === 'analog-simple');
+  $('clkPillA2').classList.toggle('active',      clockMode === 'analog-classic');
+  $('clkDigitalOpts').style.display = clockMode === 'digital' ? '' : 'none';
+  const sl = $('clkSizeSlider');
+  sl.value = clkScaleStep;
+  _updateSliderFill(sl);
+  document.querySelectorAll('#clkOptsPanel .cal-size-ticks span').forEach((s, i) => {
+    s.classList.toggle('tick-active', i === clkScaleStep);
+  });
+}
+function openClockPanel() {
+  _updateClockPanelUI();
+  $('clkOptsPanel').classList.add('open');
+}
+function closeClockPanel() { $('clkOptsPanel').classList.remove('open'); }
+function toggleClockPanel() {
+  $('clkOptsPanel').classList.contains('open') ? closeClockPanel() : openClockPanel();
+}
+
+$('clkPillDigital').onclick = e => { e.stopPropagation(); setClockMode('digital');         _updateClockPanelUI(); };
+$('clkPillA1').onclick      = e => { e.stopPropagation(); setClockMode('analog-simple');   _updateClockPanelUI(); };
+$('clkPillA2').onclick      = e => { e.stopPropagation(); setClockMode('analog-classic');  _updateClockPanelUI(); };
+
+$('clkSizeSlider').addEventListener('input', e => {
+  e.stopPropagation();
+  clkScaleStep = parseInt(e.target.value);
+  localStorage.setItem('clk_scale', clkScaleStep);
+  updateContentScale('clockWidget');
+  _updateSliderFill(e.target);
+  document.querySelectorAll('#clkOptsPanel .cal-size-ticks span').forEach((s, i) => {
+    s.classList.toggle('tick-active', i === clkScaleStep);
+  });
+});
+$('clkSizeSlider').addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
+
+// ── Calendar settings panel ──
+function _updateSliderFill(sl) {
+  const pct = (sl.value / sl.max) * 100;
+  sl.style.background = `linear-gradient(to right, var(--accent) ${pct}%, rgba(128,128,128,0.2) ${pct}%)`;
+}
+function _updateCalPanelUI() {
+  ['calPDay','calPWeek','calPMonth','calPYear'].forEach((id, i) => {
+    $(id).classList.toggle('active', calPeriod === ['day','week','month','year'][i]);
+  });
+  const sl = $('calSizeSlider');
+  sl.value = calScaleStep;
+  _updateSliderFill(sl);
+  document.querySelectorAll('#calOptsPanel .cal-size-ticks span').forEach((s, i) => {
+    s.classList.toggle('tick-active', i === calScaleStep);
+  });
+}
+function openCalPanel()   { _updateCalPanelUI(); $('calOptsPanel').classList.add('open'); }
+function closeCalPanel()  { $('calOptsPanel').classList.remove('open'); }
+function toggleCalPanel() { $('calOptsPanel').classList.contains('open') ? closeCalPanel() : openCalPanel(); }
+
+['calPDay','calPWeek','calPMonth','calPYear'].forEach((id, i) => {
+  $(id).onclick = e => {
+    e.stopPropagation();
+    calPeriod = ['day','week','month','year'][i];
+    localStorage.setItem('cal_period', calPeriod);
+    _updateCalPanelUI();
+    if (_googleToken) loadCalendarEvents();
+  };
+});
+
+$('calSizeSlider').addEventListener('input', e => {
+  e.stopPropagation();
+  calScaleStep = parseInt(e.target.value);
+  localStorage.setItem('cal_scale', calScaleStep);
+  updateContentScale('calendarWidget');
+  _updateSliderFill(e.target);
+  document.querySelectorAll('#calOptsPanel .cal-size-ticks span').forEach((s, i) => {
+    s.classList.toggle('tick-active', i === calScaleStep);
+  });
+});
+$('calSizeSlider').addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
+
+// ── Weather settings panel ──
+const WX_TOG_KEYS = ['icon','temp','desc','humidity','wind','highlow'];
+
+function applyWxOpts() {
+  $('wxIcon').style.display                   = wxOpts.icon     ? '' : 'none';
+  $('wxTemp').parentElement.style.display     = wxOpts.temp     ? '' : 'none';
+  $('wxDesc').style.display                   = wxOpts.desc     ? '' : 'none';
+  $('wxHumidity').parentElement.style.display = wxOpts.humidity ? '' : 'none';
+  $('wxWind').parentElement.style.display     = wxOpts.wind     ? '' : 'none';
+  $('wxHigh').parentElement.style.display     = wxOpts.highlow  ? '' : 'none';
+  $('wxLow').parentElement.style.display      = wxOpts.highlow  ? '' : 'none';
+  const anyGrid = wxOpts.humidity || wxOpts.wind || wxOpts.highlow;
+  $('weatherWidget').querySelector('.wx-divider').style.display = anyGrid ? '' : 'none';
+  $('weatherWidget').querySelector('.wx-grid').style.display    = anyGrid ? '' : 'none';
+}
+
+function _updateWxPanelUI() {
+  WX_TOG_KEYS.forEach(k => {
+    const id = 'wxTog' + k.charAt(0).toUpperCase() + k.slice(1);
+    $(id).className = 'clock-opt-toggle' + (wxOpts[k] ? ' on' : '');
+  });
+  const sl = $('wxSizeSlider');
+  sl.value = wxScaleStep;
+  _updateSliderFill(sl);
+  document.querySelectorAll('#wxOptsPanel .cal-size-ticks span').forEach((s, i) => {
+    s.classList.toggle('tick-active', i === wxScaleStep);
+  });
+}
+function openWxPanel()   { _updateWxPanelUI(); $('wxOptsPanel').classList.add('open'); }
+function closeWxPanel()  { $('wxOptsPanel').classList.remove('open'); }
+function toggleWxPanel() { $('wxOptsPanel').classList.contains('open') ? closeWxPanel() : openWxPanel(); }
+
+WX_TOG_KEYS.forEach(k => {
+  $('wxTog' + k.charAt(0).toUpperCase() + k.slice(1)).onclick = e => {
+    e.stopPropagation();
+    wxOpts[k] = !wxOpts[k];
+    localStorage.setItem('wx_opts', JSON.stringify(wxOpts));
+    applyWxOpts();
+    _updateWxPanelUI();
+  };
+});
+
+$('wxSizeSlider').addEventListener('input', e => {
+  e.stopPropagation();
+  wxScaleStep = parseInt(e.target.value);
+  localStorage.setItem('wx_scale', wxScaleStep);
+  updateContentScale('weatherWidget');
+  _updateSliderFill(e.target);
+  document.querySelectorAll('#wxOptsPanel .cal-size-ticks span').forEach((s, i) => {
+    s.classList.toggle('tick-active', i === wxScaleStep);
+  });
+});
+$('wxSizeSlider').addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
+
+// ── Global Settings Panel ──
+function openSettingsPanel()  { $('settingsPanel').classList.add('open'); }
+function closeSettingsPanel() { $('settingsPanel').classList.remove('open'); }
+$('btnSettings').onclick = e => {
+  e.stopPropagation();
+  $('settingsPanel').classList.contains('open') ? closeSettingsPanel() : openSettingsPanel();
+};
+
+// Background image
+function applyBgImage(dataUrl) {
+  if (dataUrl) {
+    document.body.style.backgroundImage = `url(${dataUrl})`;
+    document.body.style.backgroundSize  = 'cover';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundRepeat   = 'no-repeat';
+  } else {
+    document.body.style.backgroundImage = '';
+    document.body.style.backgroundSize  = '';
+    document.body.style.backgroundPosition = '';
+    document.body.style.backgroundRepeat   = '';
+  }
+}
+(function() {
+  try { const d = localStorage.getItem('amb_bg'); if (d) applyBgImage(d); } catch(e) {}
+})();
+$('bgFileInput').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    applyBgImage(dataUrl);
+    try { localStorage.setItem('amb_bg', dataUrl); } catch(e) {
+      console.warn('背景画像の保存に失敗しました（容量超過の可能性）');
+    }
+  };
+  reader.readAsDataURL(file);
+  this.value = '';
+});
+$('settingsBtnBgReset').onclick = e => {
+  e.stopPropagation();
+  applyBgImage(null);
+  try { localStorage.removeItem('amb_bg'); } catch(e) {}
+};
+
+function _onDocPointerDown(e) {
+  const t = e.target || (e.touches && e.touches[0] && e.touches[0].target);
+  if ($('settingsPanel').classList.contains('open') &&
+      !$('settingsPanel').contains(t) && !$('btnSettings').contains(t)) closeSettingsPanel();
+  if ($('clkOptsPanel').classList.contains('open') &&
+      !$('clkOptsPanel').contains(t) && !$('clockWidget').contains(t)) closeClockPanel();
+  if ($('calOptsPanel').classList.contains('open') &&
+      !$('calOptsPanel').contains(t) && !$('calendarWidget').contains(t)) closeCalPanel();
+  if ($('wxOptsPanel').classList.contains('open') &&
+      !$('wxOptsPanel').contains(t) && !$('weatherWidget').contains(t)) closeWxPanel();
+}
+document.addEventListener('mousedown',  _onDocPointerDown, true);
+document.addEventListener('touchstart', _onDocPointerDown, true);
+
+function resizeClockCanvas() {
+  const wg = $('clockWidget'), cv = $('clkCanvas');
+  cv.width  = wg.clientWidth;
+  cv.height = wg.clientHeight;
+}
+
+function startAnalogClock() {
+  if (_clockAnimId) return;
+  const tick = () => {
+    if (clockMode === 'digital') { _clockAnimId = null; return; }
+    drawAnalogClock();
+    _clockAnimId = requestAnimationFrame(tick);
+  };
+  _clockAnimId = requestAnimationFrame(tick);
+}
+
+function drawAnalogClock() {
+  const cv  = $('clkCanvas');
+  const W = cv.width, H = cv.height;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const now      = new Date();
+  const ms       = now.getMilliseconds() / 1000;
+  const sec      = now.getSeconds() + ms;
+  const min      = now.getMinutes() + sec / 60;
+  const hr       = (now.getHours() % 12) + min / 60;
+  const isSimple = clockMode === 'analog-simple';
+  const isDark   = theme === 'dark';
+
+  const pd = 20;
+  const r  = Math.min(W - pd * 2, H - pd * 2) / 2 * 0.94;
+  const cx = W / 2, cy = H / 2;
+
+  const clr = {
+    rim:    isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.14)',
+    majTk:  isDark ? 'rgba(255,255,255,0.60)' : 'rgba(0,0,0,0.52)',
+    minTk:  isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.20)',
+    num:    isDark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.78)',
+    hrH:    isDark ? 'rgba(255,255,255,0.96)' : 'rgba(0,0,0,0.86)',
+    minH:   isDark ? 'rgba(255,255,255,0.78)' : 'rgba(0,0,0,0.68)',
+    secH:   isDark ? '#5aafff' : '#007AFF',
+    dot:    isDark ? '#fff' : '#111',
+  };
+
+  // Face rim
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = clr.rim;
+  ctx.lineWidth   = isSimple ? 1 : 2;
+  ctx.stroke();
+
+  // Tick marks
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 60; i++) {
+    const isMaj = i % 5 === 0;
+    if (!isMaj && isSimple) continue;
+    const ang   = (i / 60) * 2 * Math.PI - Math.PI / 2;
+    const inner = r * (isMaj ? (isSimple ? 0.84 : 0.82) : 0.91);
+    ctx.beginPath();
+    ctx.moveTo(cx + inner * Math.cos(ang), cy + inner * Math.sin(ang));
+    ctx.lineTo(cx + r * 0.97 * Math.cos(ang), cy + r * 0.97 * Math.sin(ang));
+    ctx.strokeStyle = isMaj ? clr.majTk : clr.minTk;
+    ctx.lineWidth   = isMaj ? (isSimple ? 1.5 : 2.5) : 1;
+    ctx.stroke();
+  }
+
+  // Numbers (classic only)
+  if (!isSimple) {
+    const fs = Math.max(10, Math.floor(r * 0.185));
+    ctx.font = `500 ${fs}px -apple-system,"SF Pro Display",Helvetica,sans-serif`;
+    ctx.fillStyle = clr.num;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (let i = 1; i <= 12; i++) {
+      const a = (i / 12) * 2 * Math.PI - Math.PI / 2;
+      ctx.fillText(String(i), cx + r * 0.71 * Math.cos(a), cy + r * 0.71 * Math.sin(a));
+    }
+  }
+
+  // Hands
+  function hand(angle, lenRatio, width, color) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.14);
+    ctx.lineTo(0, -r * lenRatio);
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = width;
+    ctx.lineCap     = 'round';
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  const aHr  = (hr  / 12) * 2 * Math.PI - Math.PI / 2;
+  const aMin = (min / 60) * 2 * Math.PI - Math.PI / 2;
+  const aSec = (sec / 60) * 2 * Math.PI - Math.PI / 2;
+
+  if (isSimple) {
+    hand(aHr,  0.50, 1.5, clr.hrH);
+    hand(aMin, 0.72, 1.0, clr.minH);
+    hand(aSec, 0.82, 0.8, clr.secH);
+  } else {
+    hand(aHr,  0.50, Math.max(3, r * 0.055), clr.hrH);
+    hand(aMin, 0.72, Math.max(2, r * 0.038), clr.minH);
+    hand(aSec, 0.82, Math.max(1.5, r * 0.022), clr.secH);
+  }
+
+  // Center dot
+  const dotR = isSimple ? Math.max(2, r * 0.032) : Math.max(3.5, r * 0.052);
+  ctx.beginPath();
+  ctx.arc(cx, cy, dotR, 0, 2 * Math.PI);
+  ctx.fillStyle = isSimple ? clr.dot : clr.secH;
+  ctx.fill();
+  if (!isSimple) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, dotR * 0.42, 0, 2 * Math.PI);
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.95)';
+    ctx.fill();
+  }
+}
+
+new ResizeObserver(() => {
+  if (clockMode !== 'digital') resizeClockCanvas();
+}).observe($('clockWidget'));
 
 // ════════════════════════════════════════════
 //  WEATHER  (Open-Meteo + Nominatim)
@@ -698,12 +1480,14 @@ async function loadCalendarEvents() {
   if (!_googleToken) return;
   try {
     const now = new Date();
+    const days = CAL_PERIOD_DAYS[calPeriod];
     const tMin = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const tMax = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+    const tMax = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days).toISOString();
+    const maxR = days <= 1 ? 8 : days <= 7 ? 20 : 50;
     const r = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/primary/events` +
       `?timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}` +
-      `&singleEvents=true&orderBy=startTime&maxResults=8`,
+      `&singleEvents=true&orderBy=startTime&maxResults=${maxR}`,
       { headers: { Authorization: `Bearer ${_googleToken}` } }
     );
     const data = await r.json();
@@ -738,8 +1522,15 @@ function renderCalendar(events) {
     let timeStr = t.allday;
     if (!isAllDay) {
       const d = new Date(ev.start.dateTime);
-      timeStr = d.toLocaleTimeString(lang === 'ja' ? 'ja-JP' : 'en-US',
+      const tf = d.toLocaleTimeString(lang === 'ja' ? 'ja-JP' : 'en-US',
         { hour: '2-digit', minute: '2-digit', hour12: lang === 'en' });
+      if (calPeriod !== 'day') {
+        const df = d.toLocaleDateString(lang === 'ja' ? 'ja-JP' : 'en-US',
+          { month: 'numeric', day: 'numeric' });
+        timeStr = df + ' ' + tf;
+      } else {
+        timeStr = tf;
+      }
     }
     const color = COLORS[i % COLORS.length];
     return `<div class="event-item">
@@ -1011,6 +1802,8 @@ function applyRects(rects) {
     el.style.height = r.h + 'px';
     widgetRects[id] = { ...r };
   });
+  updateAllScales();
+  updateDividers();
 }
 
 function snapAnimate(rects) {
@@ -1128,7 +1921,7 @@ function endDrag() {
 }
 
 // ── Per-widget long-press detection ──
-function initWidgetDrag(id) {
+function initWidgetDrag(id, onTap) {
   const el = $(id);
   let timer = null, sx = 0, sy = 0;
 
@@ -1150,7 +1943,12 @@ function initWidgetDrag(id) {
     e.preventDefault();
   }
 
-  function cancel() { clearTimeout(timer); timer = null; el.classList.remove('press-hold'); }
+  function cancel() {
+    const pending = timer !== null;
+    clearTimeout(timer); timer = null;
+    el.classList.remove('press-hold');
+    if (pending && onTap && !dragState) onTap();
+  }
 
   el.addEventListener('mousedown',   onDown);
   el.addEventListener('touchstart',  onDown, { passive: false });
@@ -1169,36 +1967,273 @@ function initWidgetDrag(id) {
 
 // ── Global drag handlers ──
 document.addEventListener('mousemove', e => {
-  if (dragState) { moveDrag(e.clientX, e.clientY); e.preventDefault(); }
+  if (dragState)    { moveDrag(e.clientX, e.clientY);    e.preventDefault(); }
+  if (dividerState) { moveDivider(e.clientX, e.clientY); e.preventDefault(); }
 });
 document.addEventListener('touchmove', e => {
-  if (dragState) { moveDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }
+  if (dragState)    { moveDrag(e.touches[0].clientX, e.touches[0].clientY);    e.preventDefault(); }
+  if (dividerState) { moveDivider(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }
 }, { passive: false });
-document.addEventListener('mouseup',  () => { if (dragState) endDrag(); });
-document.addEventListener('touchend', () => { if (dragState) endDrag(); });
+document.addEventListener('mouseup',  () => { if (dragState) endDrag(); if (dividerState) endDivider(); });
+document.addEventListener('touchend', () => { if (dragState) endDrag(); if (dividerState) endDivider(); });
 
-$('btnReset').onclick = () => {
+$('settingsBtnReset').onclick = e => {
+  e.stopPropagation();
   localStorage.removeItem('amb_layout');
   snapAnimate(getDefaultLayout());
 };
 
-// リサイズ時にレイアウトを画面サイズに合わせて再スケール
+// 画面リサイズ時に再スケール
 window.addEventListener('resize', () => {
-  if (dragState) return;
+  if (dragState || dividerState) return;
+  const def = getDefaultLayout();
+  WIDGET_IDS.forEach(id => { WIDGET_REF_SIZE[id] = { w: def[id].w, h: def[id].h }; });
   if (loadLayout()) applyRects(widgetRects);
-  else applyRects(getDefaultLayout());
+  else applyRects(def);
 });
+
+// ════════════════════════════════════════════
+//  RESIZE
+// ════════════════════════════════════════════
+const WIDGET_REF_SIZE   = {};
+const RESIZE_ADJ_THRESH = LAYOUT_GAP + 8;
+let   resizeState = null;
+let   dividerState = null;
+
+function updateContentScale(id) {
+  if (id === 'clockWidget') {
+    $(id).style.setProperty('--wscale', CLK_SCALE_VALUES[clkScaleStep].toFixed(3));
+    return;
+  }
+  if (id === 'calendarWidget') {
+    $(id).style.setProperty('--wscale', CAL_SCALE_VALUES[calScaleStep].toFixed(3));
+    return;
+  }
+  if (id === 'weatherWidget') {
+    $(id).style.setProperty('--wscale', WX_SCALE_VALUES[wxScaleStep].toFixed(3));
+    return;
+  }
+  const r = widgetRects[id], ref = WIDGET_REF_SIZE[id];
+  if (!ref) return;
+  const s = Math.max(0.45, Math.min(Math.min(r.w / ref.w, r.h / ref.h), 2.2));
+  $(id).style.setProperty('--wscale', s.toFixed(3));
+}
+function updateAllScales() { WIDGET_IDS.forEach(updateContentScale); }
+
+function getAdjRight(id) {
+  const edge = widgetRects[id].x + widgetRects[id].w + LAYOUT_GAP;
+  return WIDGET_IDS.filter(o => o !== id && Math.abs(widgetRects[o].x - edge) < RESIZE_ADJ_THRESH);
+}
+function getAdjBottom(id) {
+  const edge = widgetRects[id].y + widgetRects[id].h + LAYOUT_GAP;
+  return WIDGET_IDS.filter(o => o !== id && Math.abs(widgetRects[o].y - edge) < RESIZE_ADJ_THRESH);
+}
+
+function applyResizeX(id, raw) {
+  const r = widgetRects[id], adj = getAdjRight(id);
+  const minW = window.innerWidth * 0.20;
+  let d = Math.max(raw, minW - r.w);
+  if (adj.length) d = Math.min(d, ...adj.map(o => widgetRects[o].w - minW));
+  else            d = Math.min(d, window.innerWidth - LAYOUT_PAD - (r.x + r.w));
+  widgetRects[id].w += d;
+  adj.forEach(o => { widgetRects[o].x += d; widgetRects[o].w -= d; });
+}
+function applyResizeY(id, raw) {
+  const r = widgetRects[id], adj = getAdjBottom(id);
+  const minH = window.innerHeight * 0.20;
+  let d = Math.max(raw, minH - r.h);
+  if (adj.length) d = Math.min(d, ...adj.map(o => widgetRects[o].h - minH));
+  else            d = Math.min(d, window.innerHeight - LAYOUT_PAD - (r.y + r.h));
+  widgetRects[id].h += d;
+  adj.forEach(o => { widgetRects[o].y += d; widgetRects[o].h -= d; });
+}
+
+function startResize(id, type, e) {
+  if (dragState) return;
+  const p = e.touches ? e.touches[0] : e;
+  resizeState = {
+    id, type,
+    startX: p.clientX, startY: p.clientY,
+    origRects: JSON.parse(JSON.stringify(widgetRects)),
+  };
+  e.stopPropagation(); e.preventDefault();
+}
+function moveResize(px, py) {
+  if (!resizeState) return;
+  const { id, type, startX, startY, origRects } = resizeState;
+  WIDGET_IDS.forEach(oid => { widgetRects[oid] = { ...origRects[oid] }; });
+  if (type === 'r' || type === 'rb') applyResizeX(id, px - startX);
+  if (type === 'b' || type === 'rb') applyResizeY(id, py - startY);
+  WIDGET_IDS.forEach(oid => {
+    const el = $(oid), r = widgetRects[oid];
+    el.style.left = r.x + 'px'; el.style.top  = r.y + 'px';
+    el.style.width = r.w + 'px'; el.style.height = r.h + 'px';
+  });
+  updateAllScales();
+  if (clockMode !== 'digital') resizeClockCanvas();
+  repositionDividers();
+}
+function endResize() {
+  if (!resizeState) return;
+  resizeState = null;
+  saveLayout();
+  updateDividers();
+}
+
+function initWidgetResize(id) {
+  $(id).querySelectorAll('.resize-handle').forEach(h => {
+    h.addEventListener('mousedown',  e => startResize(id, h.dataset.resize, e));
+    h.addEventListener('touchstart', e => startResize(id, h.dataset.resize, e), { passive: false });
+  });
+}
+
+// ════════════════════════════════════════════
+//  DIVIDERS
+// ════════════════════════════════════════════
+const _dividers = {};  // key → DOM element
+
+function _detectAdjPairs() {
+  const pairs = [], E = 2;
+  for (let i = 0; i < WIDGET_IDS.length; i++) {
+    for (let j = i + 1; j < WIDGET_IDS.length; j++) {
+      const idA = WIDGET_IDS[i], idB = WIDGET_IDS[j];
+      const a = widgetRects[idA], b = widgetRects[idB];
+      if (Math.abs(a.x + a.w + LAYOUT_GAP - b.x) < E) pairs.push({ idL: idA, idR: idB, axis: 'v' });
+      if (Math.abs(b.x + b.w + LAYOUT_GAP - a.x) < E) pairs.push({ idL: idB, idR: idA, axis: 'v' });
+      if (Math.abs(a.y + a.h + LAYOUT_GAP - b.y) < E) pairs.push({ idL: idA, idR: idB, axis: 'h' });
+      if (Math.abs(b.y + b.h + LAYOUT_GAP - a.y) < E) pairs.push({ idL: idB, idR: idA, axis: 'h' });
+    }
+  }
+  return pairs;
+}
+
+const DVR_LEN = 72;
+
+function _posDivider(el, idL, idR, axis) {
+  const rL = widgetRects[idL], rR = widgetRects[idR];
+  const hitExtra = LAYOUT_GAP; // adds LAYOUT_GAP on each side → 3x total hit width
+  if (axis === 'v') {
+    const sharedTop = Math.max(rL.y, rR.y);
+    const sharedBot = Math.min(rL.y + rL.h, rR.y + rR.h);
+    const midY = (sharedTop + sharedBot) / 2;
+    Object.assign(el.style, {
+      left:   (rL.x + rL.w - hitExtra) + 'px',
+      top:    (midY - DVR_LEN / 2) + 'px',
+      width:  (LAYOUT_GAP + hitExtra * 2) + 'px',
+      height: DVR_LEN + 'px'
+    });
+  } else {
+    const sharedLeft  = Math.max(rL.x, rR.x);
+    const sharedRight = Math.min(rL.x + rL.w, rR.x + rR.w);
+    const midX = (sharedLeft + sharedRight) / 2;
+    Object.assign(el.style, {
+      left:   (midX - DVR_LEN / 2) + 'px',
+      top:    (rL.y + rL.h - hitExtra) + 'px',
+      width:  DVR_LEN + 'px',
+      height: (LAYOUT_GAP + hitExtra * 2) + 'px'
+    });
+  }
+}
+
+function updateDividers() {
+  Object.values(_dividers).forEach(el => el.remove());
+  Object.keys(_dividers).forEach(k => delete _dividers[k]);
+  _detectAdjPairs().forEach(({ idL, idR, axis }) => {
+    const key = idL + ':' + idR + ':' + axis;
+    const el = document.createElement('div');
+    el.className = 'divider ' + (axis === 'v' ? 'divider-v' : 'divider-h');
+    $('app').appendChild(el);
+    _dividers[key] = el;
+    _posDivider(el, idL, idR, axis);
+    const onStart = e => {
+      if (e.type === 'touchstart') e.preventDefault();
+      e.stopPropagation();
+      const p = e.touches ? e.touches[0] : e;
+      startDivider(key, idL, idR, axis, p.clientX, p.clientY);
+    };
+    el.addEventListener('mousedown',  onStart);
+    el.addEventListener('touchstart', onStart, { passive: false });
+  });
+}
+
+function repositionDividers() {
+  Object.entries(_dividers).forEach(([key, el]) => {
+    const [idL, idR, axis] = key.split(':');
+    _posDivider(el, idL, idR, axis);
+  });
+}
+
+function startDivider(key, idL, idR, axis, px, py) {
+  if (dragState || resizeState) return;
+  WIDGET_IDS.forEach(wid => $(wid).classList.remove('snapping'));
+  const el = _dividers[key];
+  if (el) el.classList.add('dvr-active');
+  dividerState = { key, idL, idR, axis, startX: px, startY: py,
+                   origRects: JSON.parse(JSON.stringify(widgetRects)) };
+}
+
+function moveDivider(px, py) {
+  if (!dividerState) return;
+  const { idL, idR, axis, startX, startY, origRects } = dividerState;
+  const E = 2;
+  const minW = window.innerWidth  * 0.20;
+  const minH = window.innerHeight * 0.20;
+  if (axis === 'v') {
+    const xBound   = origRects[idL].x + origRects[idL].w;
+    const leftIds  = WIDGET_IDS.filter(id => Math.abs(origRects[id].x + origRects[id].w - xBound) < E);
+    const rightIds = WIDGET_IDS.filter(id => Math.abs(origRects[id].x - (xBound + LAYOUT_GAP)) < E);
+    let d = px - startX;
+    d = Math.max(d, ...leftIds.map(id  => minW - origRects[id].w));
+    d = Math.min(d, ...rightIds.map(id => origRects[id].w - minW));
+    leftIds.forEach(id  => { widgetRects[id] = { ...origRects[id], w: origRects[id].w + d }; });
+    rightIds.forEach(id => { widgetRects[id] = { ...origRects[id], x: origRects[id].x + d, w: origRects[id].w - d }; });
+  } else {
+    const yBound    = origRects[idL].y + origRects[idL].h;
+    const topIds    = WIDGET_IDS.filter(id => Math.abs(origRects[id].y + origRects[id].h - yBound) < E);
+    const bottomIds = WIDGET_IDS.filter(id => Math.abs(origRects[id].y - (yBound + LAYOUT_GAP)) < E);
+    let d = py - startY;
+    d = Math.max(d, ...topIds.map(id    => minH - origRects[id].h));
+    d = Math.min(d, ...bottomIds.map(id => origRects[id].h - minH));
+    topIds.forEach(id    => { widgetRects[id] = { ...origRects[id], h: origRects[id].h + d }; });
+    bottomIds.forEach(id => { widgetRects[id] = { ...origRects[id], y: origRects[id].y + d, h: origRects[id].h - d }; });
+  }
+  WIDGET_IDS.forEach(id => {
+    const el = $(id), r = widgetRects[id];
+    el.style.left = r.x + 'px'; el.style.top  = r.y + 'px';
+    el.style.width = r.w + 'px'; el.style.height = r.h + 'px';
+  });
+  updateAllScales();
+  if (clockMode !== 'digital') resizeClockCanvas();
+  repositionDividers();
+}
+
+function endDivider() {
+  if (!dividerState) return;
+  const { key } = dividerState;
+  if (_dividers[key]) _dividers[key].classList.remove('dvr-active');
+  dividerState = null;
+  saveLayout();
+  updateDividers();
+}
 
 // ════════════════════════════════════════════
 //  BOOT
 // ════════════════════════════════════════════
 applyTheme();
 applyLang();
-updateClock();
-widgetRects = getDefaultLayout();
+setClockMode(clockMode);
+applyClkOpts();
+const _defLayout = getDefaultLayout();
+WIDGET_IDS.forEach(id => { WIDGET_REF_SIZE[id] = { w: _defLayout[id].w, h: _defLayout[id].h }; });
+widgetRects = _defLayout;
 loadLayout();
 applyRects(widgetRects);
-WIDGET_IDS.forEach(initWidgetDrag);
+applyWxOpts();
+WIDGET_IDS.forEach(id => initWidgetDrag(id,
+  id === 'clockWidget'    ? toggleClockPanel :
+  id === 'calendarWidget' ? toggleCalPanel   :
+  id === 'weatherWidget'  ? toggleWxPanel    : null));
+WIDGET_IDS.forEach(initWidgetResize);
 fetchWeather();
 initCalendar();
 </script>
