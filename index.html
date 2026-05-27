@@ -398,7 +398,7 @@ body {
 }
 .wx-desc {
   font-size: clamp(10px, calc(13px * var(--wscale)), 44px); font-weight: 400;
-  color: var(--text-2); margin-top: 4px;
+  color: var(--text-2); margin-top: 4px; text-align: left;
   transition: color var(--tr);
 }
 
@@ -590,6 +590,18 @@ body {
 }
 .wx-opt-row + .wx-opt-row { border-top: 1px solid var(--divider); }
 .wx-size-sep { height: 1px; background: var(--divider); margin: 18px 0; }
+
+/* ── Weather responsive ── */
+#weatherWidget {
+  align-items: flex-start;
+}
+#weatherWidget .wx-main {
+  justify-content: flex-start;
+}
+#weatherWidget .wx-divider,
+#weatherWidget .wx-grid {
+  align-self: stretch;
+}
 
 /* ════════════════════════════════
    SETUP MODAL
@@ -793,12 +805,56 @@ body {
 .cal-ycell.y-today { color: var(--accent); font-weight: 700; }
 .cal-ycell.y-ev { position: relative; }
 .cal-ycell.y-ev::after { content: ''; position: absolute; bottom: 1px; width: clamp(2px,3px,4px); height: clamp(2px,3px,4px); border-radius: 50%; background: var(--accent); }
+
+/* ── Background Layer ── */
+#bgLayer {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none; overflow: hidden;
+}
+#app { position: relative; z-index: 1; }
+
+/* ── Settings panel width ── */
+.settings-panel { min-width: 340px; }
+
+/* ── Background preset thumbnails ── */
+#bgPresetGrid {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 2px 0 8px;
+}
+.bg-thumb {
+  background: none; border: 2px solid transparent;
+  border-radius: 10px; padding: 3px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transition: border-color 0.15s;
+}
+.bg-thumb.active { border-color: var(--accent); }
+.bg-thumb span {
+  font-family: var(--font); font-size: 10px;
+  color: var(--text-2); font-weight: 500; white-space: nowrap;
+}
+.bg-thumb-preview {
+  width: 48px; height: 34px; border-radius: 6px;
+  overflow: hidden; position: relative; flex-shrink: 0;
+}
+/* Static previews */
+.bg-thumb-none {
+  background: radial-gradient(ellipse at 20% 30%, #1a3a8a 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 80%, #4a1a7a 0%, transparent 55%),
+              linear-gradient(160deg, #08081c 0%, #101030 100%);
+}
+.bg-thumb-img {
+  background-size: cover;
+  background-position: center;
+  background-color: #111;
+}
 </style>
 </head>
 <body class="dark">
 
 <!-- Google Identity Services (for Calendar OAuth) -->
 <script src="https://accounts.google.com/gsi/client" async></script>
+
+<div id="bgLayer"></div>
 
 <div id="app">
 
@@ -976,9 +1032,16 @@ body {
       <label class="settings-action-btn" for="bgFileInput" id="settingsBtnBg">選択</label>
       <input type="file" id="bgFileInput" accept="image/*" style="display:none">
     </div>
-    <div class="settings-row">
-      <span id="settingsLbBgReset">デフォルト背景</span>
-      <button class="settings-action-btn" id="settingsBtnBgReset">元に戻す</button>
+    <div class="settings-row" style="padding-bottom:0">
+      <span id="settingsLbBgPreset">背景プリセット</span>
+    </div>
+    <div id="bgPresetGrid">
+      <button class="bg-thumb" data-preset="none"><div class="bg-thumb-preview bg-thumb-none"></div><span id="bgThumbLbNone">なし</span></button>
+      <button class="bg-thumb" data-preset="1"><div class="bg-thumb-preview bg-thumb-img" style="background-image:url('backgrounds/bg1.jpg')"></div><span>1</span></button>
+      <button class="bg-thumb" data-preset="2"><div class="bg-thumb-preview bg-thumb-img" style="background-image:url('backgrounds/bg2.jpg')"></div><span>2</span></button>
+      <button class="bg-thumb" data-preset="3"><div class="bg-thumb-preview bg-thumb-img" style="background-image:url('backgrounds/bg3.jpg')"></div><span>3</span></button>
+      <button class="bg-thumb" data-preset="4"><div class="bg-thumb-preview bg-thumb-img" style="background-image:url('backgrounds/bg4.jpg')"></div><span>4</span></button>
+      <button class="bg-thumb" data-preset="5"><div class="bg-thumb-preview bg-thumb-img" style="background-image:url('backgrounds/bg5.jpg')"></div><span>5</span></button>
     </div>
   </div>
 
@@ -1032,6 +1095,7 @@ const WX_SCALE_VALUES = [1.3, 1.6, 2.0, 2.5, 3.0];
 let wxOpts = JSON.parse(localStorage.getItem('wx_opts') ||
   '{"icon":true,"temp":true,"desc":true,"humidity":true,"wind":true,"highlow":true}');
 let wxScaleStep = parseInt(localStorage.getItem('wx_scale') || '2');
+let bgPreset = localStorage.getItem('amb_bg_preset') || 'none';
 
 const COLORS = ['#FF6B6B','#4EC9C4','#5AAFFF','#A78BFA','#34D399','#F59E0B'];
 
@@ -1062,6 +1126,12 @@ const T = {
     wxOptIcon:'天気アイコン', wxOptTemp:'気温', wxOptDesc:'天気の説明',
     wxOptHumidity:'湿度', wxOptWind:'風速', wxOptHighlow:'最高・最低気温',
     wxSizeLabel:'コンテンツサイズ',
+    settingsTitle:'設定', settingsLang:'言語', settingsTheme:'テーマ',
+    themeDark:'ダーク', themeLight:'ライト',
+    settingsLayout:'レイアウト', settingsReset:'リセット',
+    settingsBg:'背景画像', settingsBgSelect:'選択',
+    settingsBgPreset:'背景プリセット', bgThumbNone:'なし',
+    calOptRefresh:'データを更新',
     wx: {
       0:'快晴',1:'晴れ',2:'一部曇り',3:'曇り',
       45:'霧',48:'霧',
@@ -1095,6 +1165,12 @@ const T = {
     wxOptIcon:'Weather Icon', wxOptTemp:'Temperature', wxOptDesc:'Description',
     wxOptHumidity:'Humidity', wxOptWind:'Wind Speed', wxOptHighlow:'High / Low',
     wxSizeLabel:'Content Size',
+    settingsTitle:'Settings', settingsLang:'Language', settingsTheme:'Theme',
+    themeDark:'Dark', themeLight:'Light',
+    settingsLayout:'Layout', settingsReset:'Reset',
+    settingsBg:'Background', settingsBgSelect:'Select',
+    settingsBgPreset:'Background Presets', bgThumbNone:'None',
+    calOptRefresh:'Refresh Data',
     wx: {
       0:'Clear Sky',1:'Mainly Clear',2:'Partly Cloudy',3:'Overcast',
       45:'Foggy',48:'Foggy',
@@ -1172,6 +1248,18 @@ function applyLang() {
   $('calPYear').textContent        = t.periodYear;
   $('calModePillList').textContent = t.calModeList;
   $('calModePillGrid').textContent = t.calModeGrid;
+  $('settingsTitleLb').textContent    = t.settingsTitle;
+  $('settingsLbLang').textContent     = t.settingsLang;
+  $('settingsLbTheme').textContent    = t.settingsTheme;
+  $('settingsBtnDark').textContent    = t.themeDark;
+  $('settingsBtnLight').textContent   = t.themeLight;
+  $('settingsLbReset').textContent    = t.settingsLayout;
+  $('settingsBtnReset').textContent   = t.settingsReset;
+  $('settingsLbBg').textContent       = t.settingsBg;
+  $('settingsBtnBg').textContent      = t.settingsBgSelect;
+  $('settingsLbBgPreset').textContent = t.settingsBgPreset;
+  $('bgThumbLbNone').textContent      = t.bgThumbNone;
+  $('calOptRefreshLb').textContent    = t.calOptRefresh;
   // re-render weather desc & calendar with new lang
   if (_weatherData) renderWeather(_weatherData);
   renderCalendar(_calEvents);
@@ -1219,10 +1307,46 @@ function setClockMode(mode) {
 // ── Clock display options ──
 function saveClkOpts() { localStorage.setItem('amb_clk_opts', JSON.stringify(clkOpts)); }
 
+function applyClkLayout() {
+  if (clockMode !== 'digital') return;
+  const cw = $('clockWidget');
+  if (!cw || cw.clientHeight === 0) return;
+
+  const dayEl  = $('clkDay');
+  const secEl  = $('clkS');
+  const dateEl = $('clkDate');
+
+  dayEl.style.display  = 'none';
+  secEl.style.display  = 'none';
+  dateEl.style.display = 'none';
+
+  const fits = () => cw.scrollHeight <= cw.clientHeight + 2;
+
+  // Set scale from slider, reduce until HH:MM alone fits
+  let scale = CLK_SCALE_VALUES[clkScaleStep];
+  cw.style.setProperty('--wscale', scale.toFixed(3));
+  while (!fits() && scale > 0.4) {
+    scale = parseFloat((scale - 0.1).toFixed(1));
+    cw.style.setProperty('--wscale', scale.toFixed(3));
+  }
+
+  // 秒 → 曜日 → 日付 の順で追加
+  if (clkOpts.sec) {
+    secEl.style.display = '';
+    if (!fits()) secEl.style.display = 'none';
+  }
+  if (fits() && clkOpts.weekday) {
+    dayEl.style.display = '';
+    if (!fits()) dayEl.style.display = 'none';
+  }
+  if (fits() && clkOpts.date) {
+    dateEl.style.display = '';
+    if (!fits()) dateEl.style.display = 'none';
+  }
+}
+
 function applyClkOpts() {
-  $('clkDay').style.display  = clkOpts.weekday ? '' : 'none';
-  $('clkS').style.display    = clkOpts.sec     ? '' : 'none';
-  $('clkDate').style.display = clkOpts.date    ? '' : 'none';
+  applyClkLayout();
   $('clkTogWeekday').className = 'clock-opt-toggle' + (clkOpts.weekday ? ' on' : '');
   $('clkTogSec').className     = 'clock-opt-toggle' + (clkOpts.sec     ? ' on' : '');
   $('clkTogDate').className    = 'clock-opt-toggle' + (clkOpts.date    ? ' on' : '');
@@ -1342,18 +1466,64 @@ $('calSizeSlider').addEventListener('touchmove', e => e.stopPropagation(), { pas
 // ── Weather settings panel ──
 const WX_TOG_KEYS = ['icon','temp','desc','humidity','wind','highlow'];
 
-function applyWxOpts() {
-  $('wxIcon').style.display                   = wxOpts.icon     ? '' : 'none';
-  $('wxTemp').parentElement.style.display     = wxOpts.temp     ? '' : 'none';
-  $('wxDesc').style.display                   = wxOpts.desc     ? '' : 'none';
-  $('wxHumidity').parentElement.style.display = wxOpts.humidity ? '' : 'none';
-  $('wxWind').parentElement.style.display     = wxOpts.wind     ? '' : 'none';
-  $('wxHigh').parentElement.style.display     = wxOpts.highlow  ? '' : 'none';
-  $('wxLow').parentElement.style.display      = wxOpts.highlow  ? '' : 'none';
-  const anyGrid = wxOpts.humidity || wxOpts.wind || wxOpts.highlow;
-  $('weatherWidget').querySelector('.wx-divider').style.display = anyGrid ? '' : 'none';
-  $('weatherWidget').querySelector('.wx-grid').style.display    = anyGrid ? '' : 'none';
+function applyWxLayout() {
+  const wx = $('weatherWidget');
+  if (!wx || wx.clientHeight === 0) return;
+
+  const locEl  = wx.querySelector('.wx-location');
+  const iconEl = $('wxIcon');
+  const tempEl = $('wxTemp').parentElement;
+  const descEl = $('wxDesc');
+  const divEl  = wx.querySelector('.wx-divider');
+  const gridEl = wx.querySelector('.wx-grid');
+  const humEl  = $('wxHumidity').parentElement;
+  const windEl = $('wxWind').parentElement;
+  const highEl = $('wxHigh').parentElement;
+  const lowEl  = $('wxLow').parentElement;
+
+  // Hide all first
+  [locEl, iconEl, tempEl, descEl, divEl, gridEl, humEl, windEl, highEl, lowEl]
+    .forEach(el => { el.style.display = 'none'; });
+
+  // Reading scrollHeight forces a reflow — used as the fit check
+  const fits = () => wx.scrollHeight <= wx.clientHeight + 2;
+
+  // 1. Show icon + temp; shrink scale until they fit
+  let scale = WX_SCALE_VALUES[wxScaleStep];
+  wx.style.setProperty('--wscale', scale.toFixed(3));
+  if (wxOpts.icon) iconEl.style.display = '';
+  if (wxOpts.temp) tempEl.style.display = '';
+
+  while (!fits() && scale > 0.4) {
+    scale = parseFloat((scale - 0.1).toFixed(1));
+    wx.style.setProperty('--wscale', scale.toFixed(3));
+  }
+
+  // 2. Try location
+  locEl.style.display = '';
+  if (!fits()) locEl.style.display = 'none';
+
+  // 3. Try description
+  if (fits() && wxOpts.desc) {
+    descEl.style.display = '';
+    if (!fits()) descEl.style.display = 'none';
+  }
+
+  // 4. Try grid (humidity / wind / high-low)
+  if (fits() && (wxOpts.humidity || wxOpts.wind || wxOpts.highlow)) {
+    divEl.style.display  = '';
+    gridEl.style.display = '';
+    if (wxOpts.humidity) humEl.style.display  = '';
+    if (wxOpts.wind)     windEl.style.display = '';
+    if (wxOpts.highlow) { highEl.style.display = ''; lowEl.style.display = ''; }
+    if (!fits()) {
+      [divEl, gridEl, humEl, windEl, highEl, lowEl]
+        .forEach(el => { el.style.display = 'none'; });
+    }
+  }
 }
+
+function applyWxOpts() { applyWxLayout(); }
 
 function _updateWxPanelUI() {
   WX_TOG_KEYS.forEach(k => {
@@ -1401,23 +1571,54 @@ $('btnSettings').onclick = e => {
   $('settingsPanel').classList.contains('open') ? closeSettingsPanel() : openSettingsPanel();
 };
 
-// Background image
-function applyBgImage(dataUrl) {
-  if (dataUrl) {
-    document.body.style.backgroundImage = `url(${dataUrl})`;
-    document.body.style.backgroundSize  = 'cover';
-    document.body.style.backgroundPosition = 'center';
-    document.body.style.backgroundRepeat   = 'no-repeat';
-  } else {
-    document.body.style.backgroundImage = '';
-    document.body.style.backgroundSize  = '';
-    document.body.style.backgroundPosition = '';
-    document.body.style.backgroundRepeat   = '';
+// ── Background preset ──
+function applyBgPreset(name) {
+  bgPreset = name;
+  localStorage.setItem('amb_bg_preset', name);
+  try { localStorage.removeItem('amb_bg'); } catch(e) {}
+  document.body.style.backgroundImage = '';
+  const layer = $('bgLayer');
+  layer.innerHTML = '';
+  layer.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;';
+  document.querySelectorAll('.bg-thumb').forEach(b => b.classList.toggle('active', b.dataset.preset === name));
+  const num = parseInt(name);
+  if (num >= 1 && num <= 5) {
+    layer.style.backgroundImage = `url('backgrounds/bg${num}.jpg')`;
+    layer.style.backgroundSize = 'cover';
+    layer.style.backgroundPosition = 'center';
+    layer.style.backgroundRepeat = 'no-repeat';
   }
 }
+
+function applyBgImage(dataUrl) {
+  document.body.style.backgroundImage = '';
+  const layer = $('bgLayer');
+  layer.innerHTML = '';
+  layer.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;';
+  if (dataUrl) {
+    layer.style.backgroundImage = `url(${dataUrl})`;
+    layer.style.backgroundSize = 'cover';
+    layer.style.backgroundPosition = 'center';
+    layer.style.backgroundRepeat = 'no-repeat';
+    bgPreset = 'none';
+    localStorage.setItem('amb_bg_preset', 'none');
+    document.querySelectorAll('.bg-thumb').forEach(b => b.classList.remove('active'));
+  }
+}
+
 (function() {
-  try { const d = localStorage.getItem('amb_bg'); if (d) applyBgImage(d); } catch(e) {}
+  try {
+    const customBg = localStorage.getItem('amb_bg');
+    const preset   = localStorage.getItem('amb_bg_preset') || 'none';
+    if (customBg) applyBgImage(customBg);
+    else applyBgPreset(preset);
+  } catch(e) { applyBgPreset('none'); }
 })();
+
+document.querySelectorAll('.bg-thumb').forEach(btn => {
+  btn.addEventListener('click', e => { e.stopPropagation(); applyBgPreset(btn.dataset.preset); });
+});
+
 $('bgFileInput').addEventListener('change', function() {
   const file = this.files[0];
   if (!file) return;
@@ -1432,11 +1633,6 @@ $('bgFileInput').addEventListener('change', function() {
   reader.readAsDataURL(file);
   this.value = '';
 });
-$('settingsBtnBgReset').onclick = e => {
-  e.stopPropagation();
-  applyBgImage(null);
-  try { localStorage.removeItem('amb_bg'); } catch(e) {}
-};
 
 function _onDocPointerDown(e) {
   const t = e.target || (e.touches && e.touches[0] && e.touches[0].target);
@@ -1576,6 +1772,7 @@ function drawAnalogClock() {
 
 new ResizeObserver(() => {
   if (clockMode !== 'digital') resizeClockCanvas();
+  else applyClkLayout();
 }).observe($('clockWidget'));
 
 let _calGridRenderTimer = null;
@@ -1586,6 +1783,10 @@ new ResizeObserver(() => {
     _calGridRenderTimer = setTimeout(() => renderCalendarGrid(_calEvents), 40);
   }
 }).observe($('calendarWidget'));
+
+new ResizeObserver(() => {
+  applyWxLayout();
+}).observe($('weatherWidget'));
 
 // ════════════════════════════════════════════
 //  WEATHER  (Open-Meteo + Nominatim)
@@ -1808,18 +2009,20 @@ function renderCalendarList(events) {
 
 function trimCalListToFit() {
   if (calDisplayMode !== 'list') return;
-  const body = $('calBody');
-  const list = body.querySelector('.event-list');
-  if (!list) return;
+  const cw   = $('calendarWidget');
+  const list = cw.querySelector('.event-list');
+  if (!list || cw.clientHeight === 0) return;
+
   const items = Array.from(list.querySelectorAll('.event-item'));
-  items.forEach(it => { it.style.display = ''; });
-  const availH = body.clientHeight;
-  let used = 0;
-  items.forEach(item => {
-    const h = item.offsetHeight;
-    if (used + h <= availH + 1) { used += h; }
-    else { item.style.display = 'none'; }
-  });
+  items.forEach(it => { it.style.display = 'none'; });
+
+  // list.scrollHeight = total content; list.clientHeight = allocated flex space
+  const fits = () => list.scrollHeight <= list.clientHeight + 2;
+
+  for (const item of items) {
+    item.style.display = '';
+    if (!fits()) { item.style.display = 'none'; break; }
+  }
 }
 
 function _evDate(ev) {
@@ -2556,7 +2759,7 @@ let   dividerState = null;
 
 function updateContentScale(id) {
   if (id === 'clockWidget') {
-    $(id).style.setProperty('--wscale', CLK_SCALE_VALUES[clkScaleStep].toFixed(3));
+    applyClkLayout();
     return;
   }
   if (id === 'calendarWidget') {
@@ -2564,7 +2767,7 @@ function updateContentScale(id) {
     return;
   }
   if (id === 'weatherWidget') {
-    $(id).style.setProperty('--wscale', WX_SCALE_VALUES[wxScaleStep].toFixed(3));
+    applyWxLayout();
     return;
   }
   const r = widgetRects[id], ref = WIDGET_REF_SIZE[id];
