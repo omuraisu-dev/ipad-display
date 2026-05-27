@@ -656,6 +656,57 @@ body {
 }
 .modal-btn.primary { background: var(--accent); border-color: transparent; color: #fff; }
 .modal-btn:active { opacity: 0.72; }
+
+/* ── Calendar widget layout ── */
+#calendarWidget { justify-content: flex-start; }
+#calBody { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.event-list { overflow: hidden; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* ── Calendar Grid Shared ── */
+.cal-grid-wrap { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
+
+/* Month Grid */
+.cal-month-head { display: grid; grid-template-columns: repeat(7,1fr); margin-bottom: 4px; flex-shrink: 0; }
+.cal-dh { text-align: center; font-size: clamp(7px, calc(9px * var(--wscale)), 22px); font-weight: 700; color: var(--text-3); padding: 2px 0; }
+.cal-dh-sun { color: #FF6B6B; }
+.cal-dh-sat { color: var(--accent); }
+.cal-month-body { display: grid; grid-template-columns: repeat(7,1fr); flex: 1; min-height: 0; }
+.cal-mcell { display: flex; flex-direction: column; align-items: center; padding: 1px; overflow: hidden; }
+.cal-mcell-out { opacity: 0.2; }
+.cal-mcell-num { font-size: clamp(7px, calc(10px * var(--wscale)), 28px); font-weight: 500; color: var(--text-1); border-radius: 50%; width: clamp(13px, calc(18px * var(--wscale)), 44px); height: clamp(13px, calc(18px * var(--wscale)), 44px); display: flex; align-items: center; justify-content: center; margin-bottom: 1px; }
+.cal-mcell-today .cal-mcell-num { background: var(--accent); color: #fff; }
+.cal-mcell-dots { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
+.cal-mcell-dot { width: clamp(3px, calc(4px * var(--wscale)), 9px); height: clamp(3px, calc(4px * var(--wscale)), 9px); border-radius: 50%; }
+.cal-mcell-evname { font-size: clamp(4px, calc(6px * var(--wscale)), 14px); color: #fff; border-radius: 2px; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; line-height: 1.4; margin-top: 1px; }
+
+/* Week Grid */
+.cal-week-head { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; margin-bottom: 5px; flex-shrink: 0; }
+.cal-wday-col { text-align: center; }
+.cal-wday-name { font-size: clamp(6px, calc(8px * var(--wscale)), 20px); font-weight: 700; color: var(--text-3); text-transform: uppercase; }
+.cal-wday-num { font-size: clamp(9px, calc(13px * var(--wscale)), 36px); font-weight: 400; color: var(--text-1); line-height: 1.2; }
+.cal-wday-today .cal-wday-num { color: var(--accent); font-weight: 700; }
+.cal-week-body { display: grid; grid-template-columns: repeat(7,1fr); flex: 1; min-height: 0; gap: 3px; overflow: hidden; align-items: start; }
+.cal-wday-evs { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.cal-wev { font-size: clamp(6px, calc(8px * var(--wscale)), 18px); font-weight: 500; color: #fff; border-radius: 3px; padding: 1px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
+
+/* Day Grid */
+.cal-day-head { font-size: clamp(9px, calc(12px * var(--wscale)), 32px); font-weight: 600; color: var(--text-1); margin-bottom: 8px; flex-shrink: 0; }
+.cal-day-evs { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 5px; }
+.cal-day-ev { display: flex; align-items: center; gap: 7px; flex-shrink: 0; overflow: hidden; }
+.cal-day-time { font-size: clamp(8px, calc(10px * var(--wscale)), 28px); color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; min-width: clamp(30px, calc(44px * var(--wscale)), 120px); }
+.cal-day-bar { height: clamp(18px, calc(22px * var(--wscale)), 58px); border-radius: 6px; flex: 1; display: flex; align-items: center; padding: 0 7px; overflow: hidden; }
+.cal-day-name { font-size: clamp(8px, calc(10px * var(--wscale)), 26px); font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Year Grid */
+.cal-year-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; flex: 1; min-height: 0; overflow: hidden; }
+.cal-ymini { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+.cal-ymini-title { font-size: clamp(6px, calc(8px * var(--wscale)), 20px); font-weight: 700; color: var(--text-2); text-align: center; margin-bottom: 2px; flex-shrink: 0; }
+.cal-ymini-grid { display: grid; grid-template-columns: repeat(7,1fr); flex: 1; min-height: 0; overflow: hidden; }
+.cal-ycell { display: flex; align-items: center; justify-content: center; font-size: clamp(4px, calc(5.5px * var(--wscale)), 14px); color: var(--text-2); border-radius: 50%; }
+.cal-ycell.y-head { font-weight: 700; color: var(--text-3); }
+.cal-ycell.y-today { color: var(--accent); font-weight: 700; }
+.cal-ycell.y-ev { position: relative; }
+.cal-ycell.y-ev::after { content: ''; position: absolute; bottom: 1px; width: clamp(2px,3px,4px); height: clamp(2px,3px,4px); border-radius: 50%; background: var(--accent); }
 </style>
 </head>
 <body class="dark">
@@ -784,11 +835,17 @@ body {
 
   <!-- ── Calendar Settings Panel ── -->
   <div class="cal-opts-panel" id="calOptsPanel">
-    <div class="cal-period-grid">
-      <button class="cal-period-btn" id="calPDay">1日</button>
-      <button class="cal-period-btn" id="calPWeek">1週間</button>
-      <button class="cal-period-btn" id="calPMonth">1ヶ月</button>
-      <button class="cal-period-btn" id="calPYear">1年</button>
+    <div class="clk-mode-seg" style="margin-bottom:16px">
+      <button class="clk-mode-pill" id="calModePillList" style="font-size:14px">予定リスト</button>
+      <button class="clk-mode-pill" id="calModePillGrid" style="font-size:14px">グリッド</button>
+    </div>
+    <div id="calPeriodSection">
+      <div class="cal-period-grid">
+        <button class="cal-period-btn" id="calPDay">1日</button>
+        <button class="cal-period-btn" id="calPWeek">1週間</button>
+        <button class="cal-period-btn" id="calPMonth">1ヶ月</button>
+        <button class="cal-period-btn" id="calPYear">1年</button>
+      </div>
     </div>
     <div class="cal-size-label" id="calSizeLb">コンテンツサイズ</div>
     <input class="cal-size-slider" type="range" id="calSizeSlider" min="0" max="4" step="1" value="2">
@@ -870,8 +927,9 @@ let _tokenTimer  = null;
 
 const CAL_SCALE_VALUES = [1.3, 1.6, 2.0, 2.5, 3.0];
 const CAL_PERIOD_DAYS  = { day: 1, week: 7, month: 30, year: 365 };
-let calPeriod    = localStorage.getItem('cal_period') || 'day';
-let calScaleStep = parseInt(localStorage.getItem('cal_scale') || '2');
+let calPeriod       = localStorage.getItem('cal_period')        || 'day';
+let calDisplayMode  = localStorage.getItem('cal_display_mode') || 'list';
+let calScaleStep    = parseInt(localStorage.getItem('cal_scale') || '2');
 
 const CLK_SCALE_VALUES = [1.3, 1.6, 2.0, 2.5, 3.0];
 let clkScaleStep = parseInt(localStorage.getItem('clk_scale') || '2');
@@ -892,7 +950,8 @@ const T = {
     dateFmt: d => `${d.getFullYear()}年 ${T.ja.mo[d.getMonth()]} ${d.getDate()}日`,
     humidity:'湿度', wind:'風速', high:'最高', low:'最低',
     calTitle:'予定', connect:'接続', refresh:'更新',
-    allday:'終日', noEvents:'今日の予定はありません',
+    calModeList:'予定リスト', calModeGrid:'グリッド',
+    allday:'終日', noEvents:'予定はありません',
     emptyText:'Google Calendarを接続して<br>今日の予定を表示します',
     mTitle:'Google Calendar 設定',
     mDesc:`Google Cloud ConsoleでOAuth 2.0クライアントIDを取得してください：<ol>
@@ -924,7 +983,8 @@ const T = {
     dateFmt: d => `${T.en.mo[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`,
     humidity:'Humidity', wind:'Wind', high:'High', low:'Low',
     calTitle:'Schedule', connect:'Connect', refresh:'Refresh',
-    allday:'All day', noEvents:'No events today',
+    calModeList:'List', calModeGrid:'Grid',
+    allday:'All day', noEvents:'No upcoming events',
     emptyText:'Connect Google Calendar<br>to show your schedule',
     mTitle:'Google Calendar Setup',
     mDesc:`Get an OAuth 2.0 Client ID from Google Cloud Console:<ol>
@@ -1014,6 +1074,8 @@ function applyLang() {
   $('calPWeek').textContent        = t.periodWeek;
   $('calPMonth').textContent       = t.periodMonth;
   $('calPYear').textContent        = t.periodYear;
+  $('calModePillList').textContent = t.calModeList;
+  $('calModePillGrid').textContent = t.calModeGrid;
   // re-render weather desc & calendar with new lang
   if (_weatherData) renderWeather(_weatherData);
   renderCalendar(_calEvents);
@@ -1124,6 +1186,9 @@ function _updateSliderFill(sl) {
   sl.style.background = `linear-gradient(to right, var(--accent) ${pct}%, rgba(128,128,128,0.2) ${pct}%)`;
 }
 function _updateCalPanelUI() {
+  $('calModePillList').classList.toggle('active', calDisplayMode === 'list');
+  $('calModePillGrid').classList.toggle('active', calDisplayMode === 'grid');
+  $('calPeriodSection').style.display = calDisplayMode === 'grid' ? '' : 'none';
   ['calPDay','calPWeek','calPMonth','calPYear'].forEach((id, i) => {
     $(id).classList.toggle('active', calPeriod === ['day','week','month','year'][i]);
   });
@@ -1145,8 +1210,26 @@ function toggleCalPanel() { $('calOptsPanel').classList.contains('open') ? close
     localStorage.setItem('cal_period', calPeriod);
     _updateCalPanelUI();
     if (_googleToken) loadCalendarEvents();
+    else renderCalendar(_calEvents);
   };
 });
+
+$('calModePillList').onclick = e => {
+  e.stopPropagation();
+  calDisplayMode = 'list';
+  localStorage.setItem('cal_display_mode', calDisplayMode);
+  _updateCalPanelUI();
+  if (_googleToken) loadCalendarEvents();
+  else renderCalendar(_calEvents);
+};
+$('calModePillGrid').onclick = e => {
+  e.stopPropagation();
+  calDisplayMode = 'grid';
+  localStorage.setItem('cal_display_mode', calDisplayMode);
+  _updateCalPanelUI();
+  if (_googleToken) loadCalendarEvents();
+  else renderCalendar(_calEvents);
+};
 
 $('calSizeSlider').addEventListener('input', e => {
   e.stopPropagation();
@@ -1399,6 +1482,15 @@ new ResizeObserver(() => {
   if (clockMode !== 'digital') resizeClockCanvas();
 }).observe($('clockWidget'));
 
+let _calGridRenderTimer = null;
+new ResizeObserver(() => {
+  if (calDisplayMode === 'list') requestAnimationFrame(trimCalListToFit);
+  else if (calDisplayMode === 'grid') {
+    clearTimeout(_calGridRenderTimer);
+    _calGridRenderTimer = setTimeout(() => renderCalendarGrid(_calEvents), 40);
+  }
+}).observe($('calendarWidget'));
+
 // ════════════════════════════════════════════
 //  WEATHER  (Open-Meteo + Nominatim)
 // ════════════════════════════════════════════
@@ -1463,7 +1555,7 @@ function connectCalendar(clientId) {
   }
   const client = google.accounts.oauth2.initTokenClient({
     client_id: clientId,
-    scope: 'https://www.googleapis.com/auth/calendar.readonly',
+    scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/tasks.readonly',
     callback: async res => {
       if (res.error) return console.warn('OAuth error:', res.error);
       _googleToken = res.access_token;
@@ -1480,10 +1572,11 @@ async function loadCalendarEvents() {
   if (!_googleToken) return;
   try {
     const now = new Date();
-    const days = CAL_PERIOD_DAYS[calPeriod];
+    // List mode: always fetch 30 days; Grid mode: use calPeriod range
+    const days = calDisplayMode === 'list' ? 30 : CAL_PERIOD_DAYS[calPeriod];
     const tMin = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const tMax = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days).toISOString();
-    const maxR = days <= 1 ? 8 : days <= 7 ? 20 : 50;
+    const maxR = days <= 1 ? 10 : days <= 7 ? 25 : 60;
 
     // Fetch all calendars
     const listRes = await fetch(
@@ -1492,85 +1585,344 @@ async function loadCalendarEvents() {
     );
     const listData = await listRes.json();
     const calendars = listData.items || [];
-    console.log('[Calendar] カレンダーリスト取得:', calendars.map(c => ({ id: c.id, summary: c.summary, selected: c.selected })));
 
     // Fetch events from all calendars in parallel
-    const results = await Promise.allSettled(
+    const calResults = await Promise.allSettled(
       calendars.map(cal =>
         fetch(
           `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events` +
           `?timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}` +
           `&singleEvents=true&orderBy=startTime&maxResults=${maxR}`,
           { headers: { Authorization: `Bearer ${_googleToken}` } }
-        ).then(r => r.json()).then(d => {
-          const items = d.items || [];
-          console.log(`[Calendar] "${cal.summary}" → ${items.length}件`);
-          return items;
-        })
+        ).then(r => r.json()).then(d => d.items || [])
       )
     );
 
-    // Merge and sort all events by start time
+    // Fetch tasks
+    let taskItems = [];
+    try {
+      const tlRes = await fetch(
+        'https://tasks.googleapis.com/tasks/v1/users/@me/lists',
+        { headers: { Authorization: `Bearer ${_googleToken}` } }
+      );
+      if (tlRes.ok) {
+        const tlData = await tlRes.json();
+        const taskLists = tlData.items || [];
+        const taskResults = await Promise.allSettled(
+          taskLists.map(tl =>
+            fetch(
+              `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(tl.id)}/tasks` +
+              `?showCompleted=false&maxResults=30`,
+              { headers: { Authorization: `Bearer ${_googleToken}` } }
+            ).then(r => r.json()).then(d => (d.items || [])
+              .filter(t => {
+                if (!t.due) return false;
+                const d = new Date(t.due);
+                return d >= new Date(tMin) && d < new Date(tMax);
+              })
+              .map(t => ({
+                ...t,
+                _isTask: true,
+                _dueDate: new Date(t.due),
+                _dueStr: new Date(t.due).toLocaleDateString(
+                  lang === 'ja' ? 'ja-JP' : 'en-US',
+                  { month: 'numeric', day: 'numeric' })
+              }))
+            )
+          )
+        );
+        taskResults.forEach(r => { if (r.status === 'fulfilled') taskItems.push(...r.value); });
+      }
+    } catch(e) { /* Tasks API unavailable */ }
+
+    // Merge events + tasks, sort by time
     const allEvents = [];
-    results.forEach(r => { if (r.status === 'fulfilled') allEvents.push(...r.value); });
+    calResults.forEach(r => { if (r.status === 'fulfilled') allEvents.push(...r.value); });
+    allEvents.push(...taskItems);
     allEvents.sort((a, b) => {
-      const ta = a.start?.dateTime || a.start?.date || '';
-      const tb = b.start?.dateTime || b.start?.date || '';
-      return ta.localeCompare(tb);
+      const ta = a._isTask
+        ? (a._dueDate ? a._dueDate.getTime() : Infinity)
+        : new Date(a.start?.dateTime || a.start?.date || 0).getTime();
+      const tb = b._isTask
+        ? (b._dueDate ? b._dueDate.getTime() : Infinity)
+        : new Date(b.start?.dateTime || b.start?.date || 0).getTime();
+      return ta - tb;
     });
 
-    console.log('[Calendar] 全イベント統合:', allEvents.length, '件');
     _calEvents = allEvents;
     renderCalendar(_calEvents);
     $('calBtn').textContent = T[lang].refresh;
   } catch(e) { console.warn('Calendar error:', e); }
-  // Refresh calendar every 5 min
   setTimeout(loadCalendarEvents, 5 * 60 * 1000);
 }
 
 function renderCalendar(events) {
+  if (calDisplayMode === 'grid') renderCalendarGrid(events);
+  else renderCalendarList(events);
+}
+
+function renderCalendarList(events) {
   const t = T[lang];
   if (events === null) {
-    $('calBody').innerHTML = `
-      <div class="cal-empty">
-        <div class="cal-empty-icon">📅</div>
-        <div class="cal-empty-text" id="calEmptyText">${t.emptyText}</div>
-      </div>`;
+    $('calBody').innerHTML = `<div class="cal-empty">
+      <div class="cal-empty-icon">📅</div>
+      <div class="cal-empty-text" id="calEmptyText">${t.emptyText}</div>
+    </div>`;
     return;
   }
   if (events.length === 0) {
-    $('calBody').innerHTML = `
-      <div class="cal-empty">
-        <div class="cal-empty-icon">✨</div>
-        <div class="cal-empty-text">${t.noEvents}</div>
-      </div>`;
+    $('calBody').innerHTML = `<div class="cal-empty">
+      <div class="cal-empty-icon">✨</div>
+      <div class="cal-empty-text">${t.noEvents}</div>
+    </div>`;
     return;
   }
+  const now = new Date();
   const rows = events.map((ev, i) => {
-    const isAllDay = !ev.start?.dateTime;
-    let timeStr = t.allday;
-    if (!isAllDay) {
+    const isTask = ev._isTask;
+    const name = isTask ? (ev.title || '(無題)') : (ev.summary || '(無題)');
+    let timeStr;
+    if (isTask) {
+      timeStr = ev._dueStr || t.allday;
+    } else if (!ev.start?.dateTime) {
+      timeStr = t.allday;
+    } else {
       const d = new Date(ev.start.dateTime);
       const tf = d.toLocaleTimeString(lang === 'ja' ? 'ja-JP' : 'en-US',
         { hour: '2-digit', minute: '2-digit', hour12: lang === 'en' });
-      if (calPeriod !== 'day') {
-        const df = d.toLocaleDateString(lang === 'ja' ? 'ja-JP' : 'en-US',
-          { month: 'numeric', day: 'numeric' });
-        timeStr = df + ' ' + tf;
-      } else {
-        timeStr = tf;
-      }
+      const sameDay = d.toDateString() === now.toDateString();
+      timeStr = sameDay ? tf : (d.toLocaleDateString(lang === 'ja' ? 'ja-JP' : 'en-US',
+        { month: 'numeric', day: 'numeric' }) + ' ' + tf);
     }
-    const color = COLORS[i % COLORS.length];
+    const color = isTask ? '#F59E0B' : COLORS[i % COLORS.length];
     return `<div class="event-item">
       <div class="event-dot" style="background:${color}"></div>
       <div class="event-info">
-        <div class="event-name">${esc(ev.summary || '(無題)')}</div>
+        <div class="event-name">${isTask ? '☑ ' : ''}${esc(name)}</div>
         <div class="event-time">${timeStr}</div>
       </div>
     </div>`;
   }).join('');
   $('calBody').innerHTML = `<div class="event-list">${rows}</div>`;
+  requestAnimationFrame(trimCalListToFit);
+}
+
+function trimCalListToFit() {
+  if (calDisplayMode !== 'list') return;
+  const body = $('calBody');
+  const list = body.querySelector('.event-list');
+  if (!list) return;
+  const items = Array.from(list.querySelectorAll('.event-item'));
+  items.forEach(it => { it.style.display = ''; });
+  const availH = body.clientHeight;
+  let used = 0;
+  items.forEach(item => {
+    const h = item.offsetHeight;
+    if (used + h <= availH + 1) { used += h; }
+    else { item.style.display = 'none'; }
+  });
+}
+
+function _evDate(ev) {
+  if (ev._isTask) return ev._dueDate || null;
+  if (ev.start?.dateTime) return new Date(ev.start.dateTime);
+  if (ev.start?.date) return new Date(ev.start.date + 'T00:00:00');
+  return null;
+}
+
+function getCalGridDensity() {
+  const h = $('calendarWidget').clientHeight;
+  return h <= 200 ? 'small' : h <= 400 ? 'medium' : 'large';
+}
+
+function renderCalendarGrid(events) {
+  const evts = events || [];
+  const density = getCalGridDensity();
+  let html = '<div class="cal-grid-wrap">';
+  if      (calPeriod === 'day')   html += renderGridDay(evts, density);
+  else if (calPeriod === 'week')  html += renderGridWeek(evts, density);
+  else if (calPeriod === 'month') html += renderGridMonth(evts, density);
+  else                            html += renderGridYear(evts, density);
+  html += '</div>';
+  $('calBody').innerHTML = html;
+}
+
+function renderGridDay(evts, density) {
+  const now = new Date();
+  const t = T[lang];
+  const todayLabel = lang === 'ja'
+    ? `${now.getMonth()+1}月${now.getDate()}日 (${t.wd[now.getDay()].slice(0,1)})`
+    : `${t.mo[now.getMonth()]} ${now.getDate()}`;
+  if (density === 'small') {
+    return `<div class="cal-day-head">${todayLabel}</div>`;
+  }
+  const maxEvts = density === 'medium' ? 2 : Infinity;
+  const todayEvts = evts.filter(ev => {
+    const d = _evDate(ev);
+    return d && d.toDateString() === now.toDateString();
+  }).sort((a, b) => {
+    const ta = a.start?.dateTime ? new Date(a.start.dateTime) : new Date(0);
+    const tb = b.start?.dateTime ? new Date(b.start.dateTime) : new Date(0);
+    return ta - tb;
+  });
+  const evHtml = todayEvts.length === 0
+    ? `<div class="cal-empty" style="padding:8px 0">
+        <div class="cal-empty-icon" style="font-size:clamp(18px,calc(28px*var(--wscale)),80px)">✨</div>
+      </div>`
+    : todayEvts.slice(0, maxEvts).map((ev, i) => {
+        const isAllDay = ev._isTask ? false : !ev.start?.dateTime;
+        let timeStr = isAllDay ? t.allday : '';
+        if (!isAllDay && ev.start?.dateTime) {
+          timeStr = new Date(ev.start.dateTime).toLocaleTimeString(
+            lang === 'ja' ? 'ja-JP' : 'en-US',
+            { hour: '2-digit', minute: '2-digit', hour12: lang === 'en' });
+        }
+        const color = COLORS[i % COLORS.length];
+        const name = ev._isTask ? (ev.title || '(無題)') : (ev.summary || '(無題)');
+        return `<div class="cal-day-ev">
+          <div class="cal-day-time">${timeStr}</div>
+          <div class="cal-day-bar" style="background:${color}">
+            <div class="cal-day-name">${esc(name)}</div>
+          </div>
+        </div>`;
+      }).join('');
+  return `<div class="cal-day-head">${todayLabel}</div>
+    <div class="cal-day-evs">${evHtml}</div>`;
+}
+
+function renderGridWeek(evts, density) {
+  const now = new Date();
+  const dow = now.getDay();
+  const weekStart = new Date(now); weekStart.setDate(now.getDate() - dow);
+  const t = T[lang];
+  const dayNames = lang === 'ja'
+    ? ['日','月','火','水','木','金','土']
+    : ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const byDay = Array.from({length:7}, () => []);
+  evts.forEach((ev, ei) => {
+    const d = _evDate(ev);
+    if (!d) return;
+    const diff = Math.floor((+d - +weekStart) / 86400000);
+    if (diff >= 0 && diff < 7) byDay[diff].push({ ev, color: COLORS[ei % COLORS.length] });
+  });
+  const headCols = Array.from({length:7}, (_, i) => {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+    const isToday = d.toDateString() === now.toDateString();
+    const nameClr = i === 0 ? 'color:#FF6B6B' : i === 6 ? 'color:var(--accent)' : '';
+    return `<div class="cal-wday-col${isToday ? ' cal-wday-today' : ''}">
+      <div class="cal-wday-name" style="${nameClr}">${dayNames[i]}</div>
+      <div class="cal-wday-num">${d.getDate()}</div>
+    </div>`;
+  }).join('');
+  if (density === 'small') {
+    return `<div class="cal-week-head">${headCols}</div>`;
+  }
+  const maxPerDay = density === 'medium' ? 1 : 5;
+  const bodyCols = byDay.map(dayEvts =>
+    `<div class="cal-wday-evs">${dayEvts.slice(0, maxPerDay).map(({ev,color}) => {
+      const name = ev._isTask ? (ev.title||'?') : (ev.summary||'?');
+      return `<div class="cal-wev" style="background:${color}">${esc(name)}</div>`;
+    }).join('')}</div>`
+  ).join('');
+  return `<div class="cal-week-head">${headCols}</div>
+    <div class="cal-week-body">${bodyCols}</div>`;
+}
+
+function renderGridMonth(evts, density) {
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = now.getDate();
+  // Store colors + names for large density
+  const byDate = {};
+  evts.forEach((ev, ei) => {
+    const d = _evDate(ev);
+    if (!d || d.getFullYear() !== year || d.getMonth() !== month) return;
+    const day = d.getDate();
+    if (!byDate[day]) byDate[day] = [];
+    byDate[day].push({ color: COLORS[ei % COLORS.length], name: ev._isTask ? (ev.title||'') : (ev.summary||'') });
+  });
+  const dayNames = lang === 'ja'
+    ? ['日','月','火','水','木','金','土']
+    : ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const headHtml = dayNames.map((d, i) => {
+    const clr = i === 0 ? 'color:#FF6B6B' : i === 6 ? 'color:var(--accent)' : '';
+    return `<div class="cal-dh" style="${clr}">${d}</div>`;
+  }).join('');
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  let cellHtml = '';
+  for (let i = 0; i < totalCells; i++) {
+    const day = i - firstDay + 1;
+    const inMonth = day >= 1 && day <= daysInMonth;
+    const isToday = inMonth && day === today;
+    const items = inMonth ? (byDate[day] || []) : [];
+    const outerCls = 'cal-mcell' + (inMonth ? '' : ' cal-mcell-out') + (isToday ? ' cal-mcell-today' : '');
+    let extra = '';
+    if (density === 'medium' && items.length) {
+      const dotHtml = items.slice(0,3).map(({color}) => `<div class="cal-mcell-dot" style="background:${color}"></div>`).join('');
+      extra = `<div class="cal-mcell-dots">${dotHtml}</div>`;
+    } else if (density === 'large' && items.length) {
+      extra = items.slice(0,2).map(({color,name}) =>
+        `<div class="cal-mcell-evname" style="background:${color}">${esc(name)}</div>`
+      ).join('');
+    }
+    cellHtml += `<div class="${outerCls}">
+      <div class="cal-mcell-num">${inMonth ? day : ''}</div>
+      ${extra}
+    </div>`;
+  }
+  return `<div class="cal-month-head">${headHtml}</div>
+    <div class="cal-month-body">${cellHtml}</div>`;
+}
+
+function renderGridYear(evts, density) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const byMonthDay = {};
+  evts.forEach(ev => {
+    const d = _evDate(ev);
+    if (!d || d.getFullYear() !== year) return;
+    byMonthDay[d.getMonth() * 100 + d.getDate()] = true;
+  });
+  const moNames = lang === 'ja'
+    ? ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dayAbbr = lang === 'ja'
+    ? ['日','月','火','水','木','金','土']
+    : ['S','M','T','W','T','F','S'];
+  // small: just month name labels in 4-col grid
+  if (density === 'small') {
+    const moLabels = moNames.map((n, m) => {
+      const isCurr = m === now.getMonth();
+      return `<div class="cal-ymini" style="align-items:center;justify-content:center">
+        <div class="cal-ymini-title" style="${isCurr ? 'color:var(--accent)' : ''}">${n}</div>
+      </div>`;
+    }).join('');
+    return `<div class="cal-year-grid" style="grid-template-columns:repeat(4,1fr)">${moLabels}</div>`;
+  }
+  const showDots = density === 'large';
+  let html = '<div class="cal-year-grid">';
+  for (let m = 0; m < 12; m++) {
+    const firstDay = new Date(year, m, 1).getDay();
+    const daysInM = new Date(year, m + 1, 0).getDate();
+    const totalCells = Math.ceil((firstDay + daysInM) / 7) * 7;
+    let gridHtml = dayAbbr.map(d => `<div class="cal-ycell y-head">${d}</div>`).join('');
+    for (let i = 0; i < totalCells; i++) {
+      const day = i - firstDay + 1;
+      const inM = day >= 1 && day <= daysInM;
+      const isToday = inM && m === now.getMonth() && day === now.getDate();
+      const hasEv = showDots && inM && byMonthDay[m * 100 + day];
+      const cls = 'cal-ycell' + (isToday ? ' y-today' : '') + (hasEv && !isToday ? ' y-ev' : '');
+      gridHtml += `<div class="${cls}">${inM ? day : ''}</div>`;
+    }
+    html += `<div class="cal-ymini">
+      <div class="cal-ymini-title">${moNames[m]}</div>
+      <div class="cal-ymini-grid">${gridHtml}</div>
+    </div>`;
+  }
+  html += '</div>';
+  return html;
 }
 
 // Calendar button
