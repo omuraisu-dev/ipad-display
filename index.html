@@ -724,14 +724,11 @@ body {
   color: var(--accent); font-weight: 700;
 }
 .cal-tgrid-body {
-  display: flex; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
-  scrollbar-width: none;
+  display: flex; flex: 1; min-height: 0; overflow: hidden;
 }
-.cal-tgrid-body::-webkit-scrollbar { display: none; }
 .cal-tgrid-gutter {
   width: clamp(22px,calc(32px * var(--wscale)),56px);
   flex-shrink: 0; position: relative;
-  min-height: calc(24 * 48px);
 }
 .cal-tgrid-hour-label {
   position: absolute; right: 4px;
@@ -743,7 +740,6 @@ body {
 .cal-tgrid-cols {
   flex: 1; position: relative;
   display: flex;
-  min-height: calc(24 * 48px);
 }
 .cal-tgrid-col {
   flex: 1; position: relative; border-left: 1px solid var(--divider);
@@ -1936,15 +1932,6 @@ function _initTimeGrid() {
   }
   updateNowLine();
   _tgNowTimer = setInterval(updateNowLine, 30000);
-  // scroll so current time is visible (~30% from top)
-  requestAnimationFrame(() => {
-    const body = document.getElementById('calTGridBody');
-    if (!body) return;
-    const now = new Date();
-    const pct = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
-    const scrollTarget = body.scrollHeight * pct - body.clientHeight * 0.3;
-    body.scrollTop = Math.max(0, scrollTarget);
-  });
 }
 
 function renderGridDay(evts, density) {
