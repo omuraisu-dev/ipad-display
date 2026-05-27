@@ -893,7 +893,6 @@ body {
   <div class="widget" id="calendarWidget">
     <div class="cal-header">
       <span class="cal-title" id="calTitle">予定</span>
-      <button class="cal-action-btn" id="calBtn">接続</button>
     </div>
     <div id="calBody">
       <div class="cal-empty">
@@ -937,6 +936,15 @@ body {
     <input class="cal-size-slider" type="range" id="calSizeSlider" min="0" max="4" step="1" value="2">
     <div class="cal-size-ticks">
       <span>XS</span><span>S</span><span>M</span><span>L</span><span>XL</span>
+    </div>
+    <div class="settings-sep"></div>
+    <div class="settings-row">
+      <span>Google Calendar</span>
+      <button class="settings-action-btn" id="calBtnConnect">接続</button>
+    </div>
+    <div class="settings-row" id="calOptRefreshRow" style="display:none">
+      <span id="calOptRefreshLb">データを更新</span>
+      <button class="settings-action-btn" id="calBtnRefresh">更新</button>
     </div>
   </div>
 
@@ -1007,9 +1015,10 @@ let theme     = localStorage.getItem('amb_theme')      || 'dark';
 let clockMode = localStorage.getItem('amb_clock_mode') || 'digital';
 let clkOpts   = JSON.parse(localStorage.getItem('amb_clk_opts') || '{"weekday":true,"sec":true,"date":true}');
 let _weatherData = null;
-let _calEvents   = null;
-let _googleToken = null;
-let _tokenTimer  = null;
+let _calEvents        = null;
+let _googleToken      = null;
+let _tokenTimer       = null;
+let _calRefreshTimer  = null;
 
 const CAL_SCALE_VALUES = [1.3, 1.6, 2.0, 2.5, 3.0];
 const CAL_PERIOD_DAYS  = { day: 1, week: 7, month: 30, year: 365 };
@@ -1136,8 +1145,9 @@ function applyLang() {
   $('lbWind').textContent     = t.wind;
   $('lbHigh').textContent     = t.high;
   $('lbLow').textContent      = t.low;
-  $('calTitle').textContent   = t.calTitle;
-  $('calBtn').textContent     = _calEvents !== null ? t.refresh : t.connect;
+  $('calTitle').textContent      = t.calTitle;
+  $('calBtnConnect').textContent = t.connect;
+  $('calBtnRefresh').textContent = t.refresh;
   $('calEmptyText') && ($('calEmptyText').innerHTML = t.emptyText);
   $('mTitle').textContent     = t.mTitle;
   $('mDesc').innerHTML        = t.mDesc;
@@ -1649,6 +1659,9 @@ function connectCalendar(clientId) {
       clearTimeout(_tokenTimer);
       _tokenTimer = setTimeout(() => connectCalendar(clientId), 55 * 60 * 1000);
       await loadCalendarEvents();
+      // Auto-refresh calendar data every 15 minutes
+      clearInterval(_calRefreshTimer);
+      _calRefreshTimer = setInterval(() => { if (_googleToken) loadCalendarEvents(); }, 15 * 60 * 1000);
     }
   });
   client.requestAccessToken({ prompt: '' });
@@ -1737,9 +1750,9 @@ async function loadCalendarEvents() {
 
     _calEvents = allEvents;
     renderCalendar(_calEvents);
-    $('calBtn').textContent = T[lang].refresh;
+    const refreshRow = $('calOptRefreshRow');
+    if (refreshRow) refreshRow.style.display = '';
   } catch(e) { console.warn('Calendar error:', e); }
-  setTimeout(loadCalendarEvents, 5 * 60 * 1000);
 }
 
 function renderCalendar(events) {
@@ -1818,7 +1831,7 @@ function _evDate(ev) {
 
 function getCalGridDensity() {
   const h = $('calendarWidget').clientHeight;
-  return h <= 400 ? 'small' : h <= 600 ? 'medium' : 'large';
+  return h <= 325 ? 'small' : h <= 600 ? 'medium' : 'large';
 }
 
 function renderCalendarGrid(events) {
@@ -2091,15 +2104,9 @@ function renderGridYear(evts, density) {
   return html;
 }
 
-// Calendar button
-$('calBtn').onclick = () => {
-  const id = localStorage.getItem('gcal_client_id');
-  if (id && _calEvents !== null) {
-    loadCalendarEvents(); // refresh
-  } else {
-    openModal();
-  }
-};
+// Calendar settings panel buttons
+$('calBtnConnect').onclick = e => { e.stopPropagation(); openModal(); };
+$('calBtnRefresh').onclick = e => { e.stopPropagation(); loadCalendarEvents(); };
 
 // ── Modal ──
 function openModal() {
