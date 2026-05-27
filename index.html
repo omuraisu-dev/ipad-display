@@ -1484,14 +1484,43 @@ async function loadCalendarEvents() {
     const tMin = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const tMax = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days).toISOString();
     const maxR = days <= 1 ? 8 : days <= 7 ? 20 : 50;
-    const r = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events` +
-      `?timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}` +
-      `&singleEvents=true&orderBy=startTime&maxResults=${maxR}`,
+
+    // Fetch all calendars
+    const listRes = await fetch(
+      'https://www.googleapis.com/calendar/v3/users/me/calendarList',
       { headers: { Authorization: `Bearer ${_googleToken}` } }
     );
-    const data = await r.json();
-    _calEvents = data.items || [];
+    const listData = await listRes.json();
+    const calendars = listData.items || [];
+    console.log('[Calendar] カレンダーリスト取得:', calendars.map(c => ({ id: c.id, summary: c.summary, selected: c.selected })));
+
+    // Fetch events from all calendars in parallel
+    const results = await Promise.allSettled(
+      calendars.map(cal =>
+        fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events` +
+          `?timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}` +
+          `&singleEvents=true&orderBy=startTime&maxResults=${maxR}`,
+          { headers: { Authorization: `Bearer ${_googleToken}` } }
+        ).then(r => r.json()).then(d => {
+          const items = d.items || [];
+          console.log(`[Calendar] "${cal.summary}" → ${items.length}件`);
+          return items;
+        })
+      )
+    );
+
+    // Merge and sort all events by start time
+    const allEvents = [];
+    results.forEach(r => { if (r.status === 'fulfilled') allEvents.push(...r.value); });
+    allEvents.sort((a, b) => {
+      const ta = a.start?.dateTime || a.start?.date || '';
+      const tb = b.start?.dateTime || b.start?.date || '';
+      return ta.localeCompare(tb);
+    });
+
+    console.log('[Calendar] 全イベント統合:', allEvents.length, '件');
+    _calEvents = allEvents;
     renderCalendar(_calEvents);
     $('calBtn').textContent = T[lang].refresh;
   } catch(e) { console.warn('Calendar error:', e); }
