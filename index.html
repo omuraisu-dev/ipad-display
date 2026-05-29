@@ -546,13 +546,23 @@ body {
 /* Setup prompt */
 .cal-empty {
   text-align: center; padding: 18px 0 4px;
+  display: flex; align-items: center; justify-content: center;
+  flex: 1;
 }
-.cal-empty-icon { font-size: clamp(22px, calc(34px * var(--wscale)), 108px); margin-bottom: 10px; }
-.cal-empty-text {
-  font-size: clamp(10px, calc(13px * var(--wscale)), 40px); line-height: 1.55;
-  color: var(--text-2);
-  transition: color var(--tr);
+.cal-login-btn {
+  background: var(--accent);
+  border: none;
+  border-radius: 14px;
+  padding: clamp(8px, calc(10px * var(--wscale)), 20px) clamp(14px, calc(18px * var(--wscale)), 36px);
+  font-family: var(--font);
+  font-size: clamp(11px, calc(14px * var(--wscale)), 28px);
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.18s;
+  white-space: nowrap;
 }
+.cal-login-btn:active { opacity: 0.75; transform: scale(0.96); }
 
 /* Event list */
 .event-list { display: flex; flex-direction: column; }
@@ -993,8 +1003,7 @@ body.edit-active #btnSettings { opacity: 0.4; pointer-events: none; }
     </div>
     <div id="calBody">
       <div class="cal-empty">
-        <div class="cal-empty-icon">📅</div>
-        <div class="cal-empty-text" id="calEmptyText">Google Calendarを接続して<br>今日の予定を表示します</div>
+        <button class="cal-login-btn" id="calLoginBtn">Googleでログイン</button>
       </div>
     </div>
   </div>
@@ -1094,29 +1103,13 @@ body.edit-active #btnSettings { opacity: 0.4; pointer-events: none; }
 
 </div><!-- #app -->
 
-<!-- ── Setup Modal ── -->
-<div id="modal">
-  <div class="modal-box">
-    <div class="modal-title" id="mTitle">Google Calendar 設定</div>
-    <div class="modal-sub" id="mDesc">
-      Google Cloud ConsoleでOAuth 2.0クライアントIDを取得してください：
-      <ol>
-        <li>Google Cloud Console → APIとサービス → 認証情報</li>
-        <li>認証情報を作成 → OAuthクライアントID → ウェブアプリケーション</li>
-        <li>承認済みJavaScriptオリジンに <code>file://</code> またはこのページのURLを追加</li>
-        <li>Google Calendar APIを有効化</li>
-      </ol>
-    </div>
-    <input class="modal-input" id="mInput" type="text"
-           placeholder="クライアントID（xxxxx.apps.googleusercontent.com）">
-    <div class="modal-row">
-      <button class="modal-btn" id="mCancel">キャンセル</button>
-      <button class="modal-btn primary" id="mSave">保存して接続</button>
-    </div>
-  </div>
-</div>
 
 <script>
+// ════════════════════════════════════════════
+//  GOOGLE CALENDAR CLIENT ID
+// ════════════════════════════════════════════
+const GCAL_CLIENT_ID = '331899296424-2naah7g54rcbq135piaibkpvqlg1gh9g.apps.googleusercontent.com';
+
 // ════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════
@@ -1276,12 +1269,6 @@ function applyLang() {
   $('calTitle').textContent      = t.calTitle;
   $('calBtnConnect').textContent = t.connect;
   $('calBtnRefresh').textContent = t.refresh;
-  $('calEmptyText') && ($('calEmptyText').innerHTML = t.emptyText);
-  $('mTitle').textContent     = t.mTitle;
-  $('mDesc').innerHTML        = t.mDesc;
-  $('mInput').placeholder     = t.mInput;
-  $('mCancel').textContent         = t.cancel;
-  $('mSave').textContent           = t.save;
   $('clkOptLbWeekday').textContent = t.optWeekday;
   $('clkOptLbSec').textContent     = t.optSec;
   $('clkOptLbDate').textContent    = t.optDate;
@@ -2068,8 +2055,8 @@ function renderWeekly(d) {
 //  CALENDAR  (Google Calendar API + GIS OAuth)
 // ════════════════════════════════════════════
 function initCalendar() {
-  const id = localStorage.getItem('gcal_client_id');
-  if (id) connectCalendar(id);
+  $('calLoginBtn').onclick = e => { e.stopPropagation(); connectCalendar(GCAL_CLIENT_ID); };
+  if (localStorage.getItem('gcal_connected')) connectCalendar(GCAL_CLIENT_ID);
 }
 
 function connectCalendar(clientId) {
@@ -2082,11 +2069,10 @@ function connectCalendar(clientId) {
     callback: async res => {
       if (res.error) return console.warn('OAuth error:', res.error);
       _googleToken = res.access_token;
-      // Auto-refresh token before it expires (~55 min)
+      localStorage.setItem('gcal_connected', '1');
       clearTimeout(_tokenTimer);
       _tokenTimer = setTimeout(() => connectCalendar(clientId), 55 * 60 * 1000);
       await loadCalendarEvents();
-      // Auto-refresh calendar data every 15 minutes
       clearInterval(_calRefreshTimer);
       _calRefreshTimer = setInterval(() => { if (_googleToken) loadCalendarEvents(); }, 15 * 60 * 1000);
     }
@@ -2207,9 +2193,9 @@ function renderCalendarList(events) {
   const t = T[lang];
   if (events === null) {
     $('calBody').innerHTML = `<div class="cal-empty">
-      <div class="cal-empty-icon">📅</div>
-      <div class="cal-empty-text" id="calEmptyText">${t.emptyText}</div>
+      <button class="cal-login-btn" id="calLoginBtn">Googleでログイン</button>
     </div>`;
+    $('calLoginBtn').onclick = e => { e.stopPropagation(); connectCalendar(GCAL_CLIENT_ID); };
     return;
   }
   if (events.length === 0) {
@@ -2550,26 +2536,8 @@ function renderGridYear(evts, density) {
 }
 
 // Calendar settings panel buttons
-$('calBtnConnect').onclick = e => { e.stopPropagation(); openModal(); };
+$('calBtnConnect').onclick = e => { e.stopPropagation(); connectCalendar(GCAL_CLIENT_ID); };
 $('calBtnRefresh').onclick = e => { e.stopPropagation(); loadCalendarEvents(); };
-
-// ── Modal ──
-function openModal() {
-  const saved = localStorage.getItem('gcal_client_id');
-  if (saved) $('mInput').value = saved;
-  $('modal').classList.add('open');
-}
-function closeModal() { $('modal').classList.remove('open'); }
-
-$('mCancel').onclick = closeModal;
-$('modal').onclick = e => { if (e.target === $('modal')) closeModal(); };
-$('mSave').onclick = () => {
-  const id = $('mInput').value.trim();
-  if (!id) return;
-  localStorage.setItem('gcal_client_id', id);
-  closeModal();
-  connectCalendar(id);
-};
 
 // ════════════════════════════════════════════
 //  LAYOUT
@@ -2853,7 +2821,7 @@ $('btnDone').onclick = e => { e.stopPropagation(); exitEditMode(); };
 // Tap on background exits edit mode
 document.addEventListener('pointerdown', e => {
   if (!isEditMode || dragState) return;
-  if (e.target.closest('.widget, #controls, .clock-opts-panel, .cal-opts-panel, .wx-opts-panel, .settings-panel, #modal')) return;
+  if (e.target.closest('.widget, #controls, .clock-opts-panel, .cal-opts-panel, .wx-opts-panel, .settings-panel')) return;
   exitEditMode();
 });
 
