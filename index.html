@@ -417,14 +417,15 @@ body {
   display: flex; align-items: center; gap: 8px;
   padding: 0 2px;
   font-size: clamp(10px, calc(13px * var(--wscale)), 32px);
+  color: var(--text-1);
 }
 .wx-week-row + .wx-week-row { border-top: 1px solid var(--divider); }
-.wx-week-day { flex: 0 0 2em; font-weight: 600; opacity: 0.6; font-size: 0.82em; }
+.wx-week-day { flex: 0 0 2em; font-weight: 600; color: var(--text-2); font-size: 0.82em; }
 .wx-week-icon { flex: 0 0 1.6em; text-align: center; }
-.wx-week-desc { flex: 1; font-size: 0.78em; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wx-week-desc { flex: 1; font-size: 0.78em; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wx-week-temps { margin-left: auto; display: flex; gap: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.wx-week-high { font-weight: 600; }
-.wx-week-low { opacity: 0.45; }
+.wx-week-high { font-weight: 600; color: var(--text-1); }
+.wx-week-low { color: var(--text-3); }
 
 .wx-cell {}
 .wx-cell-label {
