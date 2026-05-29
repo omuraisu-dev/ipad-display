@@ -1465,7 +1465,7 @@ function _updateSliderFill(sl) {
 function _updateCalPanelUI() {
   $('calModePillList').classList.toggle('active', calDisplayMode === 'list');
   $('calModePillGrid').classList.toggle('active', calDisplayMode === 'grid');
-  $('calPeriodSection').style.display = calDisplayMode === 'grid' ? '' : 'none';
+  $('calPeriodSection').style.display = '';
   ['calPDay','calPWeek','calPMonth','calPYear'].forEach((id, i) => {
     $(id).classList.toggle('active', calPeriod === ['day','week','month','year'][i]);
   });
@@ -2098,11 +2098,27 @@ async function loadCalendarEvents() {
   if (!_googleToken) return;
   try {
     const now = new Date();
-    // List mode: always fetch 30 days; Grid mode: use calPeriod range
-    const days = calDisplayMode === 'list' ? 30 : CAL_PERIOD_DAYS[calPeriod];
-    const tMin = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const tMax = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days).toISOString();
-    const maxR = days <= 1 ? 10 : days <= 7 ? 25 : 60;
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let tMin, tMax, maxR;
+    if (calPeriod === 'week') {
+      const dow = today.getDay();
+      const diffToMon = dow === 0 ? -6 : 1 - dow;
+      const monday = new Date(today); monday.setDate(today.getDate() + diffToMon);
+      const nextMonday = new Date(monday); nextMonday.setDate(monday.getDate() + 7);
+      tMin = monday.toISOString(); tMax = nextMonday.toISOString(); maxR = 50;
+    } else if (calPeriod === 'month') {
+      const ms = new Date(now.getFullYear(), now.getMonth(), 1);
+      const me = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      tMin = ms.toISOString(); tMax = me.toISOString(); maxR = 100;
+    } else if (calPeriod === 'year') {
+      const ys = new Date(now.getFullYear(), 0, 1);
+      const ye = new Date(now.getFullYear() + 1, 0, 1);
+      tMin = ys.toISOString(); tMax = ye.toISOString(); maxR = 200;
+    } else {
+      tMin = today.toISOString();
+      tMax = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+      maxR = 10;
+    }
 
     // Fetch all calendars
     const listRes = await fetch(
