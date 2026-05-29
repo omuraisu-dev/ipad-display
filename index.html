@@ -184,9 +184,9 @@ body {
 .widget.press-hold { transform: scale(0.96); transition: transform 0.45s ease-out; }
 .widget.dragging {
   cursor: grabbing;
-  box-shadow: 0 24px 72px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.10);
-  transform: scale(1.03); opacity: 0.88; z-index: 500;
-  transition: transform 0.15s ease-out, opacity 0.15s, box-shadow 0.2s;
+  box-shadow: 0 36px 96px rgba(0,0,0,0.60), 0 12px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+  transform: scale(1.06); opacity: 1; z-index: 500;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s, opacity 0.15s;
 }
 /* position/size animated snap */
 .widget.snapping {
@@ -197,26 +197,29 @@ body {
               width  0.28s cubic-bezier(0.25,0.46,0.45,0.94),
               height 0.28s cubic-bezier(0.25,0.46,0.45,0.94);
 }
-/* Screen edge drop zone */
-.screen-edge {
-  position: fixed; pointer-events: none; z-index: 250;
-  opacity: 0; transition: opacity 0.15s;
-}
-.screen-edge.left-edge   { left: 0;   top: 0; bottom: 0; width: 64px;  background: linear-gradient(to right,  rgba(90,175,255,0.55), transparent); }
-.screen-edge.right-edge  { right: 0;  top: 0; bottom: 0; width: 64px;  background: linear-gradient(to left,   rgba(90,175,255,0.55), transparent); }
-.screen-edge.top-edge    { top: 0;    left: 0; right: 0; height: 64px; background: linear-gradient(to bottom, rgba(90,175,255,0.55), transparent); }
-.screen-edge.bottom-edge { bottom: 0; left: 0; right: 0; height: 64px; background: linear-gradient(to top,    rgba(90,175,255,0.55), transparent); }
-.screen-edge.active { opacity: 1; }
 
-/* Drop edge highlight */
-.drop-edge {
-  position: absolute; pointer-events: none; z-index: 300;
-  background: var(--accent);
-  box-shadow: 0 0 14px 6px var(--accent), 0 0 4px 1px rgba(255,255,255,0.5);
-  border-radius: 3px;
-  opacity: 0; transition: opacity 0.15s;
+/* iOS-style edit mode */
+@keyframes jiggle {
+  from { transform: rotate(-1.5deg); }
+  to   { transform: rotate( 1.5deg); }
 }
-.drop-edge.active { opacity: 1; }
+.widget.edit-mode {
+  animation: jiggle 0.13s ease-in-out infinite alternate;
+  cursor: grab;
+  transition: background var(--tr), border-color var(--tr), box-shadow 0.2s, opacity 0.15s;
+}
+.widget.edit-mode.dragging {
+  animation: none;
+  cursor: grabbing;
+}
+/* Dodge animation for non-dragged widgets */
+.widget.dodge-preview {
+  transition: left 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              top  0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              width  0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              height 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              background var(--tr), border-color var(--tr), box-shadow 0.2s;
+}
 
 /* ════════════════════════════════
    CLOCK WIDGET
@@ -405,6 +408,23 @@ body {
 .wx-divider { height: 1px; background: var(--divider); margin: 0 0 14px; transition: background var(--tr); }
 
 .wx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; }
+
+/* Weekly forecast view */
+#weatherWidget.wx-weekly-mode { display: flex; flex-direction: column; }
+.wx-weekly { display: flex; flex-direction: column; overflow: hidden; flex: 1; min-height: 0; }
+.wx-week-row {
+  flex: 1;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 2px;
+  font-size: clamp(10px, calc(13px * var(--wscale)), 32px);
+}
+.wx-week-row + .wx-week-row { border-top: 1px solid var(--divider); }
+.wx-week-day { flex: 0 0 2em; font-weight: 600; opacity: 0.6; font-size: 0.82em; }
+.wx-week-icon { flex: 0 0 1.6em; text-align: center; }
+.wx-week-desc { flex: 1; font-size: 0.78em; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wx-week-temps { margin-left: auto; display: flex; gap: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wx-week-high { font-weight: 600; }
+.wx-week-low { opacity: 0.45; }
 
 .wx-cell {}
 .wx-cell-label {
@@ -806,6 +826,24 @@ body {
 .cal-ycell.y-ev { position: relative; }
 .cal-ycell.y-ev::after { content: ''; position: absolute; bottom: 1px; width: clamp(2px,3px,4px); height: clamp(2px,3px,4px); border-radius: 50%; background: var(--accent); }
 
+/* ── Edit Mode ── */
+#btnDone {
+  display: none;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 15px; font-weight: 600;
+  border-radius: 13px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.18s;
+  letter-spacing: 0.1px;
+}
+#btnDone:active { opacity: 0.75; transform: scale(0.95); }
+body.edit-active #btnDone { display: block; }
+body.edit-active #btnSettings { opacity: 0.4; pointer-events: none; }
+
 /* ── Background Layer ── */
 #bgLayer {
   position: fixed; inset: 0; z-index: 0;
@@ -860,6 +898,7 @@ body {
 
   <!-- Controls -->
   <div id="controls">
+    <button class="ctrl-btn" id="btnDone">完了</button>
     <button class="ctrl-btn" id="btnSettings" title="設定">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -886,6 +925,7 @@ body {
       <button class="clk-mode-pill" id="clkPillDigital">D</button>
       <button class="clk-mode-pill" id="clkPillA1">A1</button>
       <button class="clk-mode-pill" id="clkPillA2">A2</button>
+      <button class="clk-mode-pill" id="clkPillA3">A3</button>
     </div>
     <div id="clkDigitalOpts">
       <div class="clock-opt-row">
@@ -943,6 +983,7 @@ body {
         <div class="wx-cell-val" id="wxLow">--°</div>
       </div>
     </div>
+    <div class="wx-weekly" id="wxWeekly"></div>
   </div>
 
   <!-- ── Calendar Widget ── -->
@@ -960,12 +1001,18 @@ body {
 
   <!-- ── Weather Settings Panel ── -->
   <div class="wx-opts-panel" id="wxOptsPanel">
-    <div class="wx-opt-row"><span id="wxOptLbIcon">天気アイコン</span><button class="clock-opt-toggle on" id="wxTogIcon"></button></div>
-    <div class="wx-opt-row"><span id="wxOptLbTemp">気温</span><button class="clock-opt-toggle on" id="wxTogTemp"></button></div>
-    <div class="wx-opt-row"><span id="wxOptLbDesc">天気の説明</span><button class="clock-opt-toggle on" id="wxTogDesc"></button></div>
-    <div class="wx-opt-row"><span id="wxOptLbHumidity">湿度</span><button class="clock-opt-toggle on" id="wxTogHumidity"></button></div>
-    <div class="wx-opt-row"><span id="wxOptLbWind">風速</span><button class="clock-opt-toggle on" id="wxTogWind"></button></div>
-    <div class="wx-opt-row"><span id="wxOptLbHighlow">最高・最低気温</span><button class="clock-opt-toggle on" id="wxTogHighlow"></button></div>
+    <div class="clk-mode-seg" style="margin-bottom:14px">
+      <button class="clk-mode-pill" id="wxViewToday">今日</button>
+      <button class="clk-mode-pill" id="wxViewWeek">1週間</button>
+    </div>
+    <div id="wxTodayOpts">
+      <div class="wx-opt-row"><span id="wxOptLbIcon">天気アイコン</span><button class="clock-opt-toggle on" id="wxTogIcon"></button></div>
+      <div class="wx-opt-row"><span id="wxOptLbTemp">気温</span><button class="clock-opt-toggle on" id="wxTogTemp"></button></div>
+      <div class="wx-opt-row"><span id="wxOptLbDesc">天気の説明</span><button class="clock-opt-toggle on" id="wxTogDesc"></button></div>
+      <div class="wx-opt-row"><span id="wxOptLbHumidity">湿度</span><button class="clock-opt-toggle on" id="wxTogHumidity"></button></div>
+      <div class="wx-opt-row"><span id="wxOptLbWind">風速</span><button class="clock-opt-toggle on" id="wxTogWind"></button></div>
+      <div class="wx-opt-row"><span id="wxOptLbHighlow">最高・最低気温</span><button class="clock-opt-toggle on" id="wxTogHighlow"></button></div>
+    </div>
     <div class="wx-size-sep"></div>
     <div class="cal-size-label" id="wxSizeLb">コンテンツサイズ</div>
     <input class="cal-size-slider" type="range" id="wxSizeSlider" min="0" max="4" step="1" value="2">
@@ -1095,6 +1142,7 @@ const WX_SCALE_VALUES = [1.3, 1.6, 2.0, 2.5, 3.0];
 let wxOpts = JSON.parse(localStorage.getItem('wx_opts') ||
   '{"icon":true,"temp":true,"desc":true,"humidity":true,"wind":true,"highlow":true}');
 let wxScaleStep = parseInt(localStorage.getItem('wx_scale') || '2');
+let wxView = localStorage.getItem('wx_view') || 'today';
 let bgPreset = localStorage.getItem('amb_bg_preset') || 'none';
 
 const COLORS = ['#FF6B6B','#4EC9C4','#5AAFFF','#A78BFA','#34D399','#F59E0B'];
@@ -1126,12 +1174,14 @@ const T = {
     wxOptIcon:'天気アイコン', wxOptTemp:'気温', wxOptDesc:'天気の説明',
     wxOptHumidity:'湿度', wxOptWind:'風速', wxOptHighlow:'最高・最低気温',
     wxSizeLabel:'コンテンツサイズ',
+    wxViewToday:'今日', wxViewWeek:'1週間',
     settingsTitle:'設定', settingsLang:'言語', settingsTheme:'テーマ',
     themeDark:'ダーク', themeLight:'ライト',
     settingsLayout:'レイアウト', settingsReset:'リセット',
     settingsBg:'背景画像', settingsBgSelect:'選択',
     settingsBgPreset:'背景プリセット', bgThumbNone:'なし',
     calOptRefresh:'データを更新',
+    editDone:'完了',
     wx: {
       0:'快晴',1:'晴れ',2:'一部曇り',3:'曇り',
       45:'霧',48:'霧',
@@ -1165,12 +1215,14 @@ const T = {
     wxOptIcon:'Weather Icon', wxOptTemp:'Temperature', wxOptDesc:'Description',
     wxOptHumidity:'Humidity', wxOptWind:'Wind Speed', wxOptHighlow:'High / Low',
     wxSizeLabel:'Content Size',
+    wxViewToday:'Today', wxViewWeek:'7-Day',
     settingsTitle:'Settings', settingsLang:'Language', settingsTheme:'Theme',
     themeDark:'Dark', themeLight:'Light',
     settingsLayout:'Layout', settingsReset:'Reset',
     settingsBg:'Background', settingsBgSelect:'Select',
     settingsBgPreset:'Background Presets', bgThumbNone:'None',
     calOptRefresh:'Refresh Data',
+    editDone:'Done',
     wx: {
       0:'Clear Sky',1:'Mainly Clear',2:'Partly Cloudy',3:'Overcast',
       45:'Foggy',48:'Foggy',
@@ -1243,6 +1295,8 @@ function applyLang() {
   $('wxOptLbHumidity').textContent   = t.wxOptHumidity;
   $('wxOptLbWind').textContent       = t.wxOptWind;
   $('wxOptLbHighlow').textContent    = t.wxOptHighlow;
+  $('wxViewToday').textContent       = t.wxViewToday;
+  $('wxViewWeek').textContent        = t.wxViewWeek;
   $('calPWeek').textContent        = t.periodWeek;
   $('calPMonth').textContent       = t.periodMonth;
   $('calPYear').textContent        = t.periodYear;
@@ -1260,6 +1314,7 @@ function applyLang() {
   $('settingsLbBgPreset').textContent = t.settingsBgPreset;
   $('bgThumbLbNone').textContent      = t.bgThumbNone;
   $('calOptRefreshLb').textContent    = t.calOptRefresh;
+  $('btnDone').textContent            = t.editDone;
   // re-render weather desc & calendar with new lang
   if (_weatherData) renderWeather(_weatherData);
   renderCalendar(_calEvents);
@@ -1367,6 +1422,7 @@ function _updateClockPanelUI() {
   $('clkPillDigital').classList.toggle('active', clockMode === 'digital');
   $('clkPillA1').classList.toggle('active',      clockMode === 'analog-simple');
   $('clkPillA2').classList.toggle('active',      clockMode === 'analog-classic');
+  $('clkPillA3').classList.toggle('active',      clockMode === 'analog-watch');
   $('clkDigitalOpts').style.display = clockMode === 'digital' ? '' : 'none';
   const sl = $('clkSizeSlider');
   sl.value = clkScaleStep;
@@ -1387,6 +1443,7 @@ function toggleClockPanel() {
 $('clkPillDigital').onclick = e => { e.stopPropagation(); setClockMode('digital');         _updateClockPanelUI(); };
 $('clkPillA1').onclick      = e => { e.stopPropagation(); setClockMode('analog-simple');   _updateClockPanelUI(); };
 $('clkPillA2').onclick      = e => { e.stopPropagation(); setClockMode('analog-classic');  _updateClockPanelUI(); };
+$('clkPillA3').onclick      = e => { e.stopPropagation(); setClockMode('analog-watch');    _updateClockPanelUI(); };
 
 $('clkSizeSlider').addEventListener('input', e => {
   e.stopPropagation();
@@ -1470,27 +1527,43 @@ function applyWxLayout() {
   const wx = $('weatherWidget');
   if (!wx || wx.clientHeight === 0) return;
 
-  const locEl  = wx.querySelector('.wx-location');
-  const iconEl = $('wxIcon');
-  const tempEl = $('wxTemp').parentElement;
-  const descEl = $('wxDesc');
-  const divEl  = wx.querySelector('.wx-divider');
-  const gridEl = wx.querySelector('.wx-grid');
-  const humEl  = $('wxHumidity').parentElement;
-  const windEl = $('wxWind').parentElement;
-  const highEl = $('wxHigh').parentElement;
-  const lowEl  = $('wxLow').parentElement;
+  const locEl    = wx.querySelector('.wx-location');
+  const iconEl   = $('wxIcon');
+  const tempEl   = $('wxTemp').parentElement;
+  const descEl   = $('wxDesc');
+  const divEl    = wx.querySelector('.wx-divider');
+  const gridEl   = wx.querySelector('.wx-grid');
+  const humEl    = $('wxHumidity').parentElement;
+  const windEl   = $('wxWind').parentElement;
+  const highEl   = $('wxHigh').parentElement;
+  const lowEl    = $('wxLow').parentElement;
+  const weeklyEl = $('wxWeekly');
 
-  // Hide all first
-  [locEl, iconEl, tempEl, descEl, divEl, gridEl, humEl, windEl, highEl, lowEl]
-    .forEach(el => { el.style.display = 'none'; });
+  const allEls = [locEl, iconEl, tempEl, descEl, divEl, gridEl, humEl, windEl, highEl, lowEl, weeklyEl];
+  allEls.forEach(el => { el.style.display = 'none'; });
 
-  // Reading scrollHeight forces a reflow — used as the fit check
   const fits = () => wx.scrollHeight <= wx.clientHeight + 2;
 
-  // 1. Show icon + temp; shrink scale until they fit
   let scale = WX_SCALE_VALUES[wxScaleStep];
   wx.style.setProperty('--wscale', scale.toFixed(3));
+
+  if (wxView === 'week') {
+    wx.classList.add('wx-weekly-mode');
+    locEl.style.display    = '';
+    weeklyEl.style.display = '';
+    weeklyEl.style.flex    = '1';
+    // shrink scale to fit width
+    while (!fits() && scale > 0.3) {
+      scale = parseFloat((scale - 0.05).toFixed(2));
+      wx.style.setProperty('--wscale', scale.toFixed(3));
+    }
+    if (!fits()) locEl.style.display = 'none';
+    return;
+  }
+
+  wx.classList.remove('wx-weekly-mode');
+
+  // Today view
   if (wxOpts.icon) iconEl.style.display = '';
   if (wxOpts.temp) tempEl.style.display = '';
 
@@ -1499,17 +1572,14 @@ function applyWxLayout() {
     wx.style.setProperty('--wscale', scale.toFixed(3));
   }
 
-  // 2. Try location
   locEl.style.display = '';
   if (!fits()) locEl.style.display = 'none';
 
-  // 3. Try description
   if (fits() && wxOpts.desc) {
     descEl.style.display = '';
     if (!fits()) descEl.style.display = 'none';
   }
 
-  // 4. Try grid (humidity / wind / high-low)
   if (fits() && (wxOpts.humidity || wxOpts.wind || wxOpts.highlow)) {
     divEl.style.display  = '';
     gridEl.style.display = '';
@@ -1536,6 +1606,9 @@ function _updateWxPanelUI() {
   document.querySelectorAll('#wxOptsPanel .cal-size-ticks span').forEach((s, i) => {
     s.classList.toggle('tick-active', i === wxScaleStep);
   });
+  $('wxViewToday').classList.toggle('active', wxView === 'today');
+  $('wxViewWeek').classList.toggle('active', wxView === 'week');
+  $('wxTodayOpts').style.display = wxView === 'week' ? 'none' : '';
 }
 function openWxPanel()   { _updateWxPanelUI(); $('wxOptsPanel').classList.add('open'); }
 function closeWxPanel()  { $('wxOptsPanel').classList.remove('open'); }
@@ -1547,6 +1620,16 @@ WX_TOG_KEYS.forEach(k => {
     wxOpts[k] = !wxOpts[k];
     localStorage.setItem('wx_opts', JSON.stringify(wxOpts));
     applyWxOpts();
+    _updateWxPanelUI();
+  };
+});
+
+['wxViewToday', 'wxViewWeek'].forEach(id => {
+  $(id).onclick = e => {
+    e.stopPropagation();
+    wxView = id === 'wxViewToday' ? 'today' : 'week';
+    localStorage.setItem('wx_view', wxView);
+    applyWxLayout();
     _updateWxPanelUI();
   };
 });
@@ -1649,9 +1732,13 @@ document.addEventListener('mousedown',  _onDocPointerDown, true);
 document.addEventListener('touchstart', _onDocPointerDown, true);
 
 function resizeClockCanvas() {
-  const wg = $('clockWidget'), cv = $('clkCanvas');
-  cv.width  = wg.clientWidth;
-  cv.height = wg.clientHeight;
+  const wg  = $('clockWidget'), cv = $('clkCanvas');
+  const dpr = window.devicePixelRatio || 1;
+  const w   = wg.clientWidth, h = wg.clientHeight;
+  cv.width        = Math.round(w * dpr);
+  cv.height       = Math.round(h * dpr);
+  cv.style.width  = w + 'px';
+  cv.style.height = h + 'px';
 }
 
 function startAnalogClock() {
@@ -1666,9 +1753,14 @@ function startAnalogClock() {
 
 function drawAnalogClock() {
   const cv  = $('clkCanvas');
-  const W = cv.width, H = cv.height;
+  const dpr = window.devicePixelRatio || 1;
+  const W   = cv.width / dpr;
+  const H   = cv.height / dpr;
   const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
+
+  if (clockMode === 'analog-watch') { drawWatchFace(ctx, W, H); return; }
 
   const now      = new Date();
   const ms       = now.getMilliseconds() / 1000;
@@ -1770,6 +1862,112 @@ function drawAnalogClock() {
   }
 }
 
+function drawWatchFace(ctx, W, H) {
+  const now = new Date();
+  const ms  = now.getMilliseconds() / 1000;
+  const sec = now.getSeconds() + ms;
+  const min = now.getMinutes() + sec / 60;
+  const hr  = (now.getHours() % 12) + min / 60;
+
+  const pd     = 16;
+  const size   = Math.min(W - pd * 2, H - pd * 2);
+  const cx     = W / 2, cy = H / 2;
+  const hs     = size / 2;
+  const cr     = size * 0.18;
+  const isDark = theme === 'dark';
+
+  // Subtle face border (defines the rounded-square shape)
+  ctx.beginPath();
+  ctx.roundRect(cx - hs, cy - hs, size, size, cr);
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Returns [px, py, nx, ny]: point on rounded-square perimeter and outward normal
+  function rrPt(angle) {
+    const cos = Math.cos(angle), sin = Math.sin(angle);
+    if (cos > 0) {
+      const y = (sin / cos) * hs;
+      if (Math.abs(y) <= hs - cr) return [hs, y, 1, 0];
+    } else if (cos < 0) {
+      const y = (sin / cos) * (-hs);
+      if (Math.abs(y) <= hs - cr) return [-hs, y, -1, 0];
+    }
+    if (sin > 0) {
+      const x = Math.abs(sin) > 1e-10 ? (cos / sin) * hs : 0;
+      if (Math.abs(x) <= hs - cr) return [x, hs, 0, 1];
+    } else {
+      const x = Math.abs(sin) > 1e-10 ? (cos / sin) * (-hs) : 0;
+      if (Math.abs(x) <= hs - cr) return [x, -hs, 0, -1];
+    }
+    // Corner arc
+    const qx = cos >= 0 ? hs - cr : -(hs - cr);
+    const qy = sin >= 0 ? hs - cr : -(hs - cr);
+    const B  = -2 * (qx * cos + qy * sin);
+    const C  = qx*qx + qy*qy - cr*cr;
+    const t  = (-B + Math.sqrt(Math.max(0, B*B - 4*C))) / 2;
+    const px = t * cos, py = t * sin;
+    return [px, py, (px - qx) / cr, (py - qy) / cr];
+  }
+
+  // Tick marks along rounded-square perimeter
+  ctx.lineCap = 'round';
+  const tkMaj = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.75)';
+  const tkMin = isDark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.22)';
+  for (let i = 0; i < 60; i++) {
+    const isCard = i % 15 === 0;
+    const isMaj  = i % 5 === 0;
+    const ang    = (i / 60) * 2 * Math.PI - Math.PI / 2;
+    const [px, py, nx, ny] = rrPt(ang);
+    const tkLen  = isCard ? hs * 0.14 : (isMaj ? hs * 0.10 : hs * 0.055);
+    ctx.beginPath();
+    ctx.moveTo(cx + px - tkLen * nx, cy + py - tkLen * ny);
+    ctx.lineTo(cx + px, cy + py);
+    ctx.strokeStyle = isMaj ? tkMaj : tkMin;
+    ctx.lineWidth   = isCard ? Math.max(3, hs * 0.038) : (isMaj ? Math.max(2, hs * 0.026) : Math.max(1, hs * 0.016));
+    ctx.stroke();
+  }
+
+  // Numbers: 12, 3, 6, 9
+  const fs = Math.max(11, Math.floor(hs * 0.20));
+  ctx.font = `600 ${fs}px -apple-system,"SF Pro Display",Helvetica,sans-serif`;
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.82)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  [12, 3, 6, 9].forEach(n => {
+    const a = (n / 12) * 2 * Math.PI - Math.PI / 2;
+    ctx.fillText(String(n), cx + hs * 0.68 * Math.cos(a), cy + hs * 0.68 * Math.sin(a));
+  });
+
+  // Hand helper
+  const handClr = isDark ? '#fff' : 'rgba(0,0,0,0.85)';
+  const hand = (angle, lenFwd, lenBack, width, color) => {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, lenBack);
+    ctx.lineTo(0, -lenFwd);
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  const aHr  = (hr  / 12) * 2 * Math.PI - Math.PI / 2;
+  const aMin = (min / 60) * 2 * Math.PI - Math.PI / 2;
+  const aSec = (sec / 60) * 2 * Math.PI - Math.PI / 2;
+
+  hand(aHr,  hs * 0.44, hs * 0.12, Math.max(4,   hs * 0.068), handClr);
+  hand(aMin, hs * 0.70, hs * 0.12, Math.max(3,   hs * 0.044), handClr);
+  hand(aSec, hs * 0.78, hs * 0.22, Math.max(1.5, hs * 0.026), '#FF6B00');
+
+  // Center dot
+  const dotR = Math.max(4.5, hs * 0.058);
+  ctx.beginPath(); ctx.arc(cx, cy, dotR, 0, 2 * Math.PI);
+  ctx.fillStyle = '#FF6B00'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, dotR * 0.40, 0, 2 * Math.PI);
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.95)'; ctx.fill();
+}
+
 new ResizeObserver(() => {
   if (clockMode !== 'digital') resizeClockCanvas();
   else applyClkLayout();
@@ -1813,8 +2011,8 @@ function fetchWeather() {
         `https://api.open-meteo.com/v1/forecast` +
         `?latitude=${lat}&longitude=${lon}` +
         `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m` +
-        `&daily=temperature_2m_max,temperature_2m_min` +
-        `&timezone=auto&forecast_days=1`
+        `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
+        `&timezone=auto&forecast_days=7`
       );
       _weatherData = await wr.json();
       renderWeather(_weatherData);
@@ -1836,6 +2034,34 @@ function renderWeather(d) {
   $('wxWind').textContent     = Math.round(c.wind_speed_10m ?? 0) + ' km/h';
   $('wxHigh').textContent     = Math.round(dl.temperature_2m_max[0]) + '°';
   $('wxLow').textContent      = Math.round(dl.temperature_2m_min[0]) + '°';
+  renderWeekly(d);
+  applyWxLayout();
+}
+
+
+function renderWeekly(d) {
+  const dl  = d.daily;
+  const wd  = T[lang].wd;
+  const container = $('wxWeekly');
+  container.innerHTML = '';
+  const shortDay = lang === 'ja'
+    ? i => wd[i].charAt(0)
+    : i => wd[i].slice(0, 3);
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(dl.time[i]);
+    const code = dl.weather_code[i] ?? 0;
+    const high = Math.round(dl.temperature_2m_max[i]);
+    const low  = Math.round(dl.temperature_2m_min[i]);
+    const row  = document.createElement('div');
+    row.className = 'wx-week-row';
+    row.innerHTML =
+      `<span class="wx-week-day">${shortDay(date.getDay())}</span>` +
+      `<span class="wx-week-icon">${WX_ICON[code] || '🌡️'}</span>` +
+      `<span class="wx-week-desc">${T[lang].wx[code] || ''}</span>` +
+      `<span class="wx-week-temps"><span class="wx-week-high">${high}°</span><span class="wx-week-low">${low}°</span></span>`;
+    container.appendChild(row);
+  }
 }
 
 // ════════════════════════════════════════════
@@ -2333,7 +2559,6 @@ $('mSave').onclick = () => {
 //  LAYOUT
 // ════════════════════════════════════════════
 const WIDGET_IDS     = ['clockWidget', 'weatherWidget', 'calendarWidget'];
-const EDGE_THRESHOLD = 70;
 const LONG_PRESS_MS  = 450;
 const SNAP_ANIM_MS   = 300;
 const LAYOUT_GAP     = 16;
@@ -2341,16 +2566,7 @@ const LAYOUT_PAD     = 16;
 
 let widgetRects = {};  // { id: { x, y, w, h } } px
 let dragState   = null;
-
-// ── Screen edge indicators ──
-const screenEdge = document.createElement('div');
-screenEdge.className = 'screen-edge';
-document.body.appendChild(screenEdge);
-
-function showScreenEdge(side) {
-  screenEdge.className = 'screen-edge active ' + side + '-edge';
-}
-function hideScreenEdge() { screenEdge.classList.remove('active'); }
+let isEditMode  = false;
 
 function computeEdgeLayout(dragId, edge) {
   const G = LAYOUT_GAP, P = LAYOUT_PAD;
@@ -2385,34 +2601,6 @@ function computeEdgeLayout(dragId, edge) {
   }
 }
 
-// ── Drop edge highlight ──
-const dropEdge = document.createElement('div');
-dropEdge.className = 'drop-edge';
-$('app').appendChild(dropEdge);
-
-function showDropEdge(targetId, side) {
-  const r = widgetRects[targetId], THICK = 4, s = dropEdge.style;
-  if      (side === 'left')   { s.left = r.x+'px';              s.top = r.y+'px';              s.width = THICK+'px'; s.height = r.h+'px'; }
-  else if (side === 'right')  { s.left = (r.x+r.w-THICK)+'px'; s.top = r.y+'px';              s.width = THICK+'px'; s.height = r.h+'px'; }
-  else if (side === 'top')    { s.left = r.x+'px';              s.top = r.y+'px';              s.width = r.w+'px';   s.height = THICK+'px'; }
-  else                        { s.left = r.x+'px';              s.top = (r.y+r.h-THICK)+'px'; s.width = r.w+'px';   s.height = THICK+'px'; }
-  dropEdge.classList.add('active');
-}
-function hideDropEdge() { dropEdge.classList.remove('active'); }
-
-function getDropTarget(dragId, px, py) {
-  for (const id of WIDGET_IDS) {
-    if (id === dragId) continue;
-    const r = widgetRects[id];
-    if (px >= r.x && px <= r.x+r.w && py >= r.y && py <= r.y+r.h) {
-      const ndx = (px - (r.x+r.w/2)) / (r.w/2);
-      const ndy = (py - (r.y+r.h/2)) / (r.h/2);
-      const side = Math.abs(ndx) >= Math.abs(ndy) ? (ndx >= 0 ? 'right' : 'left') : (ndy >= 0 ? 'bottom' : 'top');
-      return { id, side };
-    }
-  }
-  return null;
-}
 
 // ── Layouts ──
 function getDefaultLayout() {
@@ -2428,125 +2616,71 @@ function getDefaultLayout() {
   };
 }
 
-// Assign dragId to slot; others fill remaining slots in WIDGET_IDS order
-function buildLayout(dragId, dragSlot, slots) {
+// Priority: edge zone → between (h3/v3) → default fallback
+function computePreviewLayout(dragId, curLeft, curTop) {
+  const origR = dragState.origRects[dragId];
+  const cx = curLeft + origR.w / 2;
+  const cy = curTop  + origR.h / 2;
+
   const others = WIDGET_IDS.filter(id => id !== dragId);
-  const order  = Array(slots.length);
-  order[dragSlot] = dragId;
-  let oi = 0;
-  for (let i = 0; i < slots.length; i++) if (order[i] === undefined) order[i] = others[oi++];
-  const rects = {};
-  order.forEach((id, i) => { rects[id] = slots[i]; });
-  return rects;
-}
+  const rA = dragState.origRects[others[0]];
+  const rB = dragState.origRects[others[1]];
+  const aCx = rA.x + rA.w / 2, aCy = rA.y + rA.h / 2;
+  const bCx = rB.x + rB.w / 2, bCy = rB.y + rB.h / 2;
 
-function mergeRects(r1, r2) {
-  const G = LAYOUT_GAP, e = 1.5;
-  if (Math.abs(r1.x+r1.w+G - r2.x) < e && Math.abs(r1.y-r2.y) < e && Math.abs(r1.h-r2.h) < e)
-    return { x: r1.x, y: r1.y, w: r1.w+G+r2.w, h: r1.h };
-  if (Math.abs(r2.x+r2.w+G - r1.x) < e && Math.abs(r1.y-r2.y) < e && Math.abs(r1.h-r2.h) < e)
-    return { x: r2.x, y: r2.y, w: r2.w+G+r1.w, h: r2.h };
-  if (Math.abs(r1.y+r1.h+G - r2.y) < e && Math.abs(r1.x-r2.x) < e && Math.abs(r1.w-r2.w) < e)
-    return { x: r1.x, y: r1.y, w: r1.w, h: r1.h+G+r2.h };
-  if (Math.abs(r2.y+r2.h+G - r1.y) < e && Math.abs(r1.x-r2.x) < e && Math.abs(r1.w-r2.w) < e)
-    return { x: r2.x, y: r2.y, w: r2.w, h: r2.h+G+r1.h };
-  return null;
-}
-
-function computeDropLayout(dragId, targetId, side) {
-  const G = LAYOUT_GAP;
-  const T = widgetRects[targetId];
-  const D_old = widgetRects[dragId];
-  const otherId = WIDGET_IDS.find(id => id !== dragId && id !== targetId);
-  const O = widgetRects[otherId];
-  let D_new, T_new;
-  if (side === 'left') {
-    const half = (T.w - G) / 2;
-    D_new = { x: T.x,        y: T.y, w: half, h: T.h };
-    T_new = { x: T.x+half+G, y: T.y, w: half, h: T.h };
-  } else if (side === 'right') {
-    const half = (T.w - G) / 2;
-    T_new = { x: T.x,        y: T.y, w: half, h: T.h };
-    D_new = { x: T.x+half+G, y: T.y, w: half, h: T.h };
-  } else if (side === 'top') {
-    const half = (T.h - G) / 2;
-    D_new = { x: T.x, y: T.y,        w: T.w, h: half };
-    T_new = { x: T.x, y: T.y+half+G, w: T.w, h: half };
-  } else {
-    const half = (T.h - G) / 2;
-    T_new = { x: T.x, y: T.y,        w: T.w, h: half };
-    D_new = { x: T.x, y: T.y+half+G, w: T.w, h: half };
-  }
-  const O_new = mergeRects(O, D_old);
-  if (O_new) return { [dragId]: D_new, [targetId]: T_new, [otherId]: O_new };
-  // Fallback: predefined layout matching the drop direction
-  const cx = D_new.x + D_new.w/2, cy = D_new.y + D_new.h/2;
-  const zmap = { left: 'leftside', right: 'rightside', top: 'topleft', bottom: 'bottomleft' };
-  return computeSnapLayout(dragId, zmap[side], cx, cy);
-}
-
-function computeSnapLayout(dragId, zone, cx, cy) {
-  const W = window.innerWidth, H = window.innerHeight, G = LAYOUT_GAP, P = LAYOUT_PAD;
-  const N = WIDGET_IDS.length;
+  const G = LAYOUT_GAP, P = LAYOUT_PAD;
+  const W = window.innerWidth, H = window.innerHeight;
   const aW = W - 2*P, aH = H - 2*P;
 
-  if (zone === 'left' || zone === 'right') {
-    const cw   = (aW - (N-1)*G) / N;
-    const slot = Math.min(N-1, Math.max(0, Math.floor(((cx-P) / aW) * N)));
-    return buildLayout(dragId, slot,
-      Array.from({length: N}, (_, i) => ({ x: P+i*(cw+G), y: P, w: cw, h: aH })));
+  // 1. Screen edge zones (12% from each edge — deliberate gesture required)
+  const ET = 0.12;
+  let edge = null;
+  if      (cx < W * ET)        edge = 'left';
+  else if (cx > W * (1 - ET))  edge = 'right';
+  else if (cy < H * ET)        edge = 'top';
+  else if (cy > H * (1 - ET))  edge = 'bottom';
+  if (edge) {
+    const el = computeEdgeLayout(dragId, edge);
+    return { zone: edge, dodgeLayout: el, dropLayout: el };
   }
 
-  if (zone === 'top' || zone === 'bottom') {
-    const ch   = (aH - (N-1)*G) / N;
-    const slot = Math.min(N-1, Math.max(0, Math.floor(((cy-P) / aH) * N)));
-    return buildLayout(dragId, slot,
-      Array.from({length: N}, (_, i) => ({ x: P, y: P+i*(ch+G), w: aW, h: ch })));
-  }
+  // 2. "Between" detection → h3 / v3
+  const horizSep = Math.abs(aCx - bCx);
+  const vertSep  = Math.abs(aCy - bCy);
 
-  if (zone === 'leftside') {
-    const colW = (aW - G) / 2, rowH = (aH - G) / 2;
-    const slots = [
-      { x: P,        y: P,        w: colW, h: aH },
-      { x: P+colW+G, y: P,        w: colW, h: rowH },
-      { x: P+colW+G, y: P+rowH+G, w: colW, h: rowH },
-    ];
-    const slot = cx < W/2 ? 0 : (cy < H/2 ? 1 : 2);
-    return buildLayout(dragId, slot, slots);
-  }
-
-  if (zone === 'rightside') {
-    const colW = (aW - G) / 2, rowH = (aH - G) / 2;
-    const slots = [
-      { x: P,        y: P,        w: colW, h: rowH },
-      { x: P,        y: P+rowH+G, w: colW, h: rowH },
-      { x: P+colW+G, y: P,        w: colW, h: aH },
-    ];
-    const slot = cx > W/2 ? 2 : (cy < H/2 ? 0 : 1);
-    return buildLayout(dragId, slot, slots);
-  }
-
-  const is2Top = zone === 'topleft' || zone === 'topright';
-  const cw     = (aW - G) / 2;
-  if (is2Top) {
-    const topH = aH*0.6 - G/2, botH = aH*0.4 - G/2, botY = P + aH*0.6 + G/2;
-    const slots = [
-      { x: P,      y: P,    w: cw, h: topH },
-      { x: P+cw+G, y: P,    w: cw, h: topH },
-      { x: P,      y: botY, w: aW, h: botH },
-    ];
-    const slot = cy > P + aH*0.6 ? 2 : (cx < W/2 ? 0 : 1);
-    return buildLayout(dragId, slot, slots);
+  if (horizSep >= vertSep) {
+    const midX     = (aCx + bCx) / 2;
+    const maxRange = Math.max(Math.min(horizSep * 0.65, W * 0.45), W * 0.18);
+    if (Math.abs(cx - midX) < maxRange / 2) {
+      const leftId  = aCx < bCx ? others[0] : others[1];
+      const rightId = aCx < bCx ? others[1] : others[0];
+      const colW = (aW - 2*G) / 3;
+      const h3 = {
+        [leftId]:  { x: P,                y: P, w: colW, h: aH },
+        [dragId]:  { x: P + colW + G,     y: P, w: colW, h: aH },
+        [rightId]: { x: P + 2*(colW + G), y: P, w: colW, h: aH },
+      };
+      return { zone: 'h3', dodgeLayout: h3, dropLayout: h3 };
+    }
   } else {
-    const topH = aH*0.4 - G/2, botH = aH*0.6 - G/2, botY = P + aH*0.4 + G/2;
-    const slots = [
-      { x: P,      y: P,    w: aW, h: topH },
-      { x: P,      y: botY, w: cw, h: botH },
-      { x: P+cw+G, y: botY, w: cw, h: botH },
-    ];
-    const slot = cy < P + aH*0.4 ? 0 : (cx < W/2 ? 1 : 2);
-    return buildLayout(dragId, slot, slots);
+    const midY     = (aCy + bCy) / 2;
+    const maxRange = Math.max(Math.min(vertSep * 0.65, H * 0.45), H * 0.18);
+    if (Math.abs(cy - midY) < maxRange / 2) {
+      const topId    = aCy < bCy ? others[0] : others[1];
+      const bottomId = aCy < bCy ? others[1] : others[0];
+      const rowH = (aH - 2*G) / 3;
+      const v3 = {
+        [topId]:    { x: P, y: P,                w: aW, h: rowH },
+        [dragId]:   { x: P, y: P + rowH + G,     w: aW, h: rowH },
+        [bottomId]: { x: P, y: P + 2*(rowH + G), w: aW, h: rowH },
+      };
+      return { zone: 'v3', dodgeLayout: v3, dropLayout: v3 };
+    }
   }
+
+  // 3. Fallback: show default positions as live preview AND apply on drop
+  const def = getDefaultLayout();
+  return { zone: null, dodgeLayout: def, dropLayout: def };
 }
 
 function applyRects(rects) {
@@ -2600,7 +2734,7 @@ function loadLayout() {
 // ── Drag ──
 function startDrag(id, px, py) {
   if (dragState) return;
-  WIDGET_IDS.forEach(wid => $(wid).classList.remove('snapping'));
+  WIDGET_IDS.forEach(wid => $(wid).classList.remove('snapping', 'dodge-preview'));
   const el = $(id), r = widgetRects[id];
 
   el.style.position = 'fixed';
@@ -2610,46 +2744,51 @@ function startDrag(id, px, py) {
   el.style.height = r.h + 'px';
   el.classList.add('dragging');
 
-  dragState = { id, el, dropTarget: null, edgeZone: null, offsetX: px - r.x, offsetY: py - r.y, origRect: { ...r } };
+  dragState = {
+    id, el,
+    offsetX: px - r.x, offsetY: py - r.y,
+    startPX: px, startPY: py,
+    origRects: Object.fromEntries(WIDGET_IDS.map(wid => [wid, { ...widgetRects[wid] }])),
+    previewZone: undefined, dropLayout: null,
+  };
 }
 
 function moveDrag(px, py) {
   if (!dragState) return;
   const { el, id } = dragState;
-  el.style.left = (px - dragState.offsetX) + 'px';
-  el.style.top  = (py - dragState.offsetY) + 'px';
 
-  const W = window.innerWidth, H = window.innerHeight, ET = EDGE_THRESHOLD;
-  const edge = px < ET ? 'left' : px > W-ET ? 'right' : py < ET ? 'top' : py > H-ET ? 'bottom' : null;
+  const newLeft = px - dragState.offsetX;
+  const newTop  = py - dragState.offsetY;
+  el.style.left = newLeft + 'px';
+  el.style.top  = newTop  + 'px';
 
-  if (edge !== dragState.edgeZone) {
-    dragState.edgeZone = edge;
-    if (edge) {
-      showScreenEdge(edge);
-      hideDropEdge();
-      dragState.dropTarget = null;
-    } else {
-      hideScreenEdge();
-    }
-  }
+  // Suppress preview until the widget has moved enough (prevents misfire on tap)
+  if (Math.hypot(px - dragState.startPX, py - dragState.startPY) < 28) return;
 
-  if (!edge) {
-    const target = getDropTarget(id, px, py);
-    const tKey   = target ? target.id + target.side : null;
-    const oldKey = dragState.dropTarget ? dragState.dropTarget.id + dragState.dropTarget.side : null;
-    if (tKey !== oldKey) {
-      dragState.dropTarget = target;
-      target ? showDropEdge(target.id, target.side) : hideDropEdge();
-    }
+  const { zone, dodgeLayout, dropLayout } = computePreviewLayout(id, newLeft, newTop);
+
+  if (zone !== dragState.previewZone) {
+    dragState.previewZone = zone;
+    dragState.dropLayout  = dropLayout;
+    WIDGET_IDS.forEach(wid => {
+      if (wid === id) return;
+      const r = dodgeLayout[wid];
+      widgetRects[wid] = { ...r };
+      const ow = $(wid);
+      ow.classList.add('dodge-preview');
+      ow.style.left   = r.x + 'px';
+      ow.style.top    = r.y + 'px';
+      ow.style.width  = r.w + 'px';
+      ow.style.height = r.h + 'px';
+    });
+    updateAllScales();
   }
 }
 
 function endDrag() {
   if (!dragState) return;
-  const { id, el, dropTarget, edgeZone, origRect } = dragState;
+  const { id, el, dropLayout, origRects } = dragState;
   dragState = null;
-  hideDropEdge();
-  hideScreenEdge();
   el.classList.remove('dragging');
 
   const curX = parseFloat(el.style.left);
@@ -2657,25 +2796,50 @@ function endDrag() {
 
   // fixed → absolute at current visual position (no jump)
   el.style.position = 'absolute';
-  el.style.left   = curX       + 'px';
-  el.style.top    = curY       + 'px';
-  el.style.width  = origRect.w + 'px';
-  el.style.height = origRect.h + 'px';
+  el.style.left   = curX + 'px';
+  el.style.top    = curY + 'px';
+  el.style.width  = origRects[id].w + 'px';
+  el.style.height = origRects[id].h + 'px';
   el.offsetLeft; // force reflow
 
-  if (edgeZone) {
-    snapAnimate(computeEdgeLayout(id, edgeZone));
-    saveLayout();
-  } else if (dropTarget) {
-    snapAnimate(computeDropLayout(id, dropTarget.id, dropTarget.side));
-    saveLayout();
-  } else {
-    el.classList.add('snapping');
-    el.style.left = origRect.x + 'px';
-    el.style.top  = origRect.y + 'px';
-    setTimeout(() => el.classList.remove('snapping'), SNAP_ANIM_MS + 50);
-  }
+  // dropLayout: h3/v3 layout, default layout, or null (snap back) for short taps
+  const finalLayout = dropLayout
+    || Object.fromEntries(WIDGET_IDS.map(wid => [wid, { ...origRects[wid] }]));
+
+  WIDGET_IDS.forEach(wid => { $(wid).classList.remove('dodge-preview'); $(wid).classList.add('snapping'); });
+  applyRects(finalLayout);
+  setTimeout(() => WIDGET_IDS.forEach(wid => $(wid).classList.remove('snapping')), SNAP_ANIM_MS + 50);
+  if (dropLayout) saveLayout();
 }
+
+// ── Edit Mode ──
+function enterEditMode() {
+  isEditMode = true;
+  document.body.classList.add('edit-active');
+  WIDGET_IDS.forEach(id => $(id).classList.add('edit-mode'));
+  // Close any open panels
+  $('clkOptsPanel').classList.remove('open');
+  $('calOptsPanel').classList.remove('open');
+  $('wxOptsPanel').classList.remove('open');
+  $('settingsPanel').classList.remove('open');
+}
+
+function exitEditMode() {
+  if (!isEditMode) return;
+  isEditMode = false;
+  document.body.classList.remove('edit-active');
+  WIDGET_IDS.forEach(id => $(id).classList.remove('edit-mode'));
+  saveLayout();
+}
+
+$('btnDone').onclick = e => { e.stopPropagation(); exitEditMode(); };
+
+// Tap on background exits edit mode
+document.addEventListener('pointerdown', e => {
+  if (!isEditMode || dragState) return;
+  if (e.target.closest('.widget, #controls, .clock-opts-panel, .cal-opts-panel, .wx-opts-panel, .settings-panel, #modal')) return;
+  exitEditMode();
+});
 
 // ── Per-widget long-press detection ──
 function initWidgetDrag(id, onTap) {
@@ -2691,10 +2855,20 @@ function initWidgetDrag(id, onTap) {
     if (e.target.closest('button, input, a')) return;
     const p = pt(e);
     sx = p.x; sy = p.y;
+
+    if (isEditMode) {
+      // In edit mode: start drag immediately on press
+      startDrag(id, sx, sy);
+      e.preventDefault();
+      return;
+    }
+
+    // Normal mode: long press → enter edit mode + start drag
     el.classList.add('press-hold');
     timer = setTimeout(() => {
       timer = null;
       el.classList.remove('press-hold');
+      enterEditMode();
       startDrag(id, sx, sy);
     }, LONG_PRESS_MS);
     e.preventDefault();
@@ -2704,7 +2878,7 @@ function initWidgetDrag(id, onTap) {
     const pending = timer !== null;
     clearTimeout(timer); timer = null;
     el.classList.remove('press-hold');
-    if (pending && onTap && !dragState) onTap();
+    if (pending && onTap && !dragState && !isEditMode) onTap();
   }
 
   el.addEventListener('mousedown',   onDown);
